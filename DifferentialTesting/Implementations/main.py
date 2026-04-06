@@ -69,10 +69,17 @@ def load_and_serve_zone_file(zone_file: pathlib.Path,
     zone_domain = ''
     with open(zone_file, 'r') as zone_pointer:
         for line in zone_pointer:
-            if 'SOA' in line:
-                zone_domain = line.split('\t')[0]
-                if ' ' in zone_domain:
-                    zone_domain = line.split()[0]
+            if 'SOA' not in line:
+                continue
+            if line[:1].isspace():
+                # Skip indented SOA-related lines (e.g., RRSIG/SOA continuations).
+                continue
+            tokens = line.split()
+            if not tokens:
+                continue
+            zone_domain = tokens[0].strip()
+            if zone_domain:
+                break
     if not zone_domain:
         sys.exit(f'Error: SOA not found in {zone_file}')
 

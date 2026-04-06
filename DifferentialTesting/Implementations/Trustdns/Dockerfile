@@ -11,16 +11,17 @@ RUN apt-get install -y \
     git \
     vim 
 
+# Hickory drops privileges to 'nobody' by default; ensure it exists
+RUN getent group nobody || groupadd -r nobody
+RUN getent passwd nobody || useradd -r -g nobody -s /usr/sbin/nologin nobody
+
 RUN  curl https://sh.rustup.rs -sSf | sh -s -- -y
 
-RUN git clone https://github.com/bluejekyll/trust-dns.git
+RUN git clone https://github.com/hickory-dns/hickory-dns.git trust-dns
 
-ARG latest=false
-
-RUN if [ "$latest" = "false" ] ; then cd trust-dns && git reset --hard 7d9b186121fb5cb331cf2ec6baa47846b83de8fc ; fi
 
 RUN cd trust-dns && \
-    /root/.cargo/bin/cargo build --release -p trust-dns
+    /root/.cargo/bin/cargo build --release
 
 COPY db.campus.edu trust-dns/tests/test-data/named_test_configs/
 COPY Trustdns/config.toml trust-dns/tests/test-data/named_test_configs/

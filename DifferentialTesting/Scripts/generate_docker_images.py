@@ -39,24 +39,25 @@ def build_docker_images(implementation: str, latest: bool, log_fp: TextIO) -> No
     :param latest: Whether to build the image using latest code.
     :param log_fp: Log file pointer.
     """
+    tag = "latest" if latest else "oct"
+    image_name = f"{implementation}:{tag}"
+    dockerfile = f"{implementation.capitalize()}/Dockerfile"
     if latest:
-        implementation += ':latest'
-        run_cmd = ['docker', 'build', '-t', implementation + ":latest", '-f',
-                   implementation.capitalize() + "/Dockerfile", '--no-cache',
-                   '--build-arg', 'latest=true', '.']
+        run_cmd = ['docker', 'build', '-t', image_name, '-f',
+                   dockerfile, '--no-cache', '--build-arg', 'latest=true', '.']
     else:
-        run_cmd = ['docker', 'build', '-t',
-                   implementation + ":oct", '-f', implementation.capitalize() + "/Dockerfile", '.']
-    log_fp.write(f'{datetime.now()}\tBuilding image for {implementation}.\n')
+        run_cmd = ['docker', 'build', '-t', image_name, '-f', dockerfile, '.']
+    log_fp.write(f'{datetime.now()}\tBuilding image for {image_name}.\n')
     begin_time = time.time()
+    impl_root = os.path.join(os.path.dirname(__file__), "..", "Implementations")
     if platform.system() == 'Linux':
         my_env = os.environ.copy()
         my_env['DOCKER_BUILDKIT'] = '1'
         cmd_output = subprocess.run(
-            run_cmd, env=my_env, stdout=subprocess.PIPE, cwd='Implementations/', check=True)
+            run_cmd, env=my_env, stdout=subprocess.PIPE, cwd=impl_root, check=True)
     else:
         cmd_output = subprocess.run(
-            run_cmd, stdout=subprocess.PIPE, cwd='Implementations/', check=True)
+            run_cmd, stdout=subprocess.PIPE, cwd=impl_root, check=True)
     if cmd_output.returncode != 0:
         log_fp.write(
             f'{datetime.now()}\tError in building image for {implementation}.\n')

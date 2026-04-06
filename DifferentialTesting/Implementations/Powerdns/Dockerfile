@@ -1,4 +1,4 @@
-FROM ubuntu:bionic
+FROM ubuntu:jammy
 
 LABEL maintainer="sivakesava@cs.ucla.edu"
 
@@ -42,7 +42,8 @@ RUN if [ "$latest" = "false" ] ; then cd pdns && git reset --hard a03aaad7554483
 RUN cd pdns && \
     sed -i 's/docutils!=0.15/docutils!=0.15,<0.18/g' docs/requirements.txt pdns/dnsdistdist/docs/requirements.txt pdns/recursordist/docs/requirements.txt && \
     autoreconf -vi && \
-    ./configure --with-modules="bind" --disable-lua-records && \
+    ./configure --with-modules="bind" --disable-lua-records --without-docs && \
+    sed -i 's/ docs//g' Makefile && \
     make && \
     make install
 

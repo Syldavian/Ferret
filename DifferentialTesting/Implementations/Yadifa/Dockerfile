@@ -9,6 +9,8 @@ RUN apt-get install -y \
     autotools-dev \
     autoconf \
     build-essential \
+    libtool \
+    libtool-bin \
     libssl-dev \
     git \
     make \
@@ -24,6 +26,7 @@ ARG latest=false
 RUN if [ "$latest" = "false" ] ; then cd yadifa && git reset --hard dc5bed2fb8ec204af9b65eeb91934c2c85098cbb ; fi
 
 RUN cd yadifa && \
+  autoreconf -if && \
   ./configure --enable-full-ascii7 && \
   make && \
   make install

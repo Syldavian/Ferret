@@ -1,4 +1,4 @@
-FROM ubuntu:bionic
+FROM ubuntu:jammy
 
 LABEL maintainer="sivakesava@cs.ucla.edu"
 
@@ -28,7 +28,7 @@ RUN if [ "$latest" = "false" ] ; then cd knot-dns && git reset --hard 563fcdd886
 
 RUN cd knot-dns && \
     autoreconf -if && \
-    ./configure && \
+    ./configure --disable-documentation && \
     make && \
     make install && \
     ldconfig

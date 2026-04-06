@@ -40,6 +40,9 @@ def run(zone_file: pathlib.Path, zone_domain: str, cname: str, port: int, restar
     subprocess.run(['docker', 'cp', 'Corefile_' + cname, cname +
                     ':/go/coredns/Corefile'], stdout=subprocess.PIPE, check=False)
     pathlib.Path('Corefile_' + cname).unlink()
-    # Start the server
-    subprocess.run(['docker', 'exec', '-d', cname, './coredns'],
-                   stdout=subprocess.PIPE, check=False)
+    # Start the server and capture logs to a file for debugging
+    subprocess.run(
+        ['docker', 'exec', '-d', cname, 'sh', '-lc',
+         'cd /go/coredns && ./coredns -conf /go/coredns/Corefile '
+         '> /go/coredns/coredns.log 2>&1 &'],
+        stdout=subprocess.PIPE, check=False)

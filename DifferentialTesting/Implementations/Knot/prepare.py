@@ -8,6 +8,7 @@ port 53, which is mapped to a host port.
 
 import pathlib
 import subprocess
+import time
 
 
 def run(zone_file: pathlib.Path, zone_domain: str, cname: str, port: int, restart: bool, tag: str) -> None:
@@ -26,16 +27,30 @@ def run(zone_file: pathlib.Path, zone_domain: str, cname: str, port: int, restar
         subprocess.run(['docker', 'run', '-dp', str(port)+':53/udp', '--name=' +
                         cname, 'knot' + tag], stdout=subprocess.PIPE, check=False)
     else:
-        # Stop the running server instance inside the container
-        subprocess.run(['docker', 'exec', cname, 'knotc', '-c',
-                        '/usr/local/etc/knot/knot.conf', 'stop'],
+        # Stop any running server instance inside the container
+        subprocess.run(['docker', 'exec', cname, 'pkill', 'knotd'],
                        stdout=subprocess.PIPE, check=False)
+        # Allow knotd to exit and release confdb/lock files
+        time.sleep(0.5)
     # Copy the new zone file into the container
     subprocess.run(['docker', 'cp', str(zone_file), cname +
                     ':/usr/local/var/lib/knot/'], stdout=subprocess.PIPE, check=False)
+    # Ensure rundir exists for knotd
+    subprocess.run(['docker', 'exec', cname, 'mkdir', '-p', '/usr/local/var/run/knot'],
+                   stdout=subprocess.PIPE, check=False)
     # Create the Knot-specific configuration file
-    knot_conf = 'server:\n    listen: 0.0.0.0@53\n    listen: ::@53\n    rundir: "/usr/local/var/run/knot"\n\n'
-    knot_conf += f'zone:\n  - domain: {zone_domain}\n    storage: /usr/local/var/lib/knot/\n    file: {zone_file.name}\n\n'
+    knot_conf = (
+        'server:\n'
+        '    listen: 0.0.0.0@53\n'
+        '    listen: ::@53\n'
+        '    rundir: "/usr/local/var/run/knot"\n\n'
+    )
+    knot_conf += (
+        'zone:\n'
+        f'  - domain: {zone_domain}\n'
+        '    storage: /usr/local/var/lib/knot/\n'
+        f'    file: {zone_file.name}\n\n'
+    )
     knot_conf += 'log:\n  - target: /var/log/knot.log\n    any: debug'
     with open('knot_'+cname+'.conf', 'w') as file_pointer:
         file_pointer.write(knot_conf)
@@ -46,6 +61,19 @@ def run(zone_file: pathlib.Path, zone_domain: str, cname: str, port: int, restar
     # Convert the zone file to Unix style (CRLF to LF)
     subprocess.run(['docker', 'exec', cname, 'dos2unix', '/usr/local/var/lib/knot/' +
                     zone_file.name], stdout=subprocess.PIPE, check=False)
-    # Start the server
-    subprocess.run(['docker', 'exec', cname, 'knotd', '-d', '-c',
-                    '/usr/local/etc/knot/knot.conf'], stdout=subprocess.PIPE, check=False)
+    # Start the server in foreground and capture logs
+    subprocess.run([
+        'docker', 'exec', '-d', cname, 'sh', '-c',
+        'knotd -c /usr/local/etc/knot/knot.conf -v >> /var/log/knot.log 2>&1'
+    ], stdout=subprocess.PIPE, check=False)
+
+    # Wait for knotd process to appear
+    deadline = time.time() + 8
+    while time.time() < deadline:
+        running = subprocess.run(
+            ['docker', 'exec', cname, 'sh', '-c', 'ps aux | grep -q "[k]notd"'],
+            stdout=subprocess.PIPE, check=False
+        )
+        if running.returncode == 0:
+            break
+        time.sleep(0.5)

@@ -59,6 +59,7 @@ ZONE_FILES = "ZoneFiles/"
 QUERIES = "Queries/"
 QUERY_RESPONSES = "ExpectedResponses/"
 DIFFERENCES = "Differences/"
+LOAD_FAILURES = "LoadFailures/"
 
 # A response is a tuple where the first element is the implementation in string format
 # and second element is a DNS response (or "No response") of that implementation
@@ -142,12 +143,53 @@ def querier(query_name: str, query_type: str, port: int) -> Union[str, dns.messa
         query = dns.message.make_query(domain, query_type)
         # Removes the default Recursion Desired Flag
         query.flags = 0
-        result = dns.query.udp(query, addr, 3, port=port)
+        result = dns.query.udp(query, addr, 3, port=port, ignore_trailing=True)
         return result
     except dns.exception.Timeout:
         return "No response"
     except:  # pylint: disable=bare-except
         return f'Unexpected error {sys.exc_info()[1]}'
+
+
+def container_debug(cname: str) -> Dict[str, str]:
+    """
+    Collect minimal container state/logs for readiness debugging.
+    """
+    debug: Dict[str, str] = {}
+    inspect = subprocess.run(
+        ['docker', 'inspect', '-f', '{{.State.Status}} {{.State.ExitCode}}', cname],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, text=True,
+    )
+    if inspect.returncode == 0:
+        debug["container_state"] = inspect.stdout.strip()
+    else:
+        debug["container_state"] = inspect.stderr.strip() or "inspect failed"
+
+    # Implementation-specific logs (most servers log to files)
+    log_paths = []
+    if "_yadifa_" in cname:
+        log_paths.extend([
+            "/usr/local/var/log/yadifa/system.log",
+            "/usr/local/var/log/yadifa/server.log",
+            "/usr/local/var/log/yadifa/all.log",
+        ])
+    if "_trustdns_" in cname:
+        log_paths.append("/var/log/hickory-dns.log")
+    if "_powerdns_" in cname:
+        log_paths.append("/usr/local/var/log/pdns_server.log")
+    if "_coredns_" in cname:
+        log_paths.append("/go/coredns/coredns.log")
+    for path in log_paths:
+        tail = subprocess.run(
+            ['docker', 'exec', cname, 'sh', '-lc', f'tail -n 100 {path}'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, text=True,
+        )
+        key = f"log_tail:{path}"
+        if tail.returncode == 0:
+            debug[key] = tail.stdout.strip()
+        else:
+            debug[key] = tail.stderr.strip() or f"tail failed for {path}"
+    return debug
 
 
 def response_equality_check(response_a: Union[str, dns.message.Message],
@@ -342,12 +384,18 @@ def run_test(zoneid: str,
     zone_domain = ''
     with open(parent_directory_path / ZONE_FILES / (zoneid + '.txt'), 'r') as zone_fp:
         for line in zone_fp:
-            if 'SOA' in line:
-                zone_domain = line.split('\t')[0]
-                if ' ' in zone_domain:
-                    zone_domain = line.split()[0]
-            if 'DNAME' in line:
+            stripped = line.strip()
+            if not stripped or stripped.startswith(';'):
+                continue
+            if 'DNAME' in stripped:
                 has_dname = True
+            if zone_domain or 'SOA' not in stripped:
+                continue
+            if line[:1].isspace():
+                continue
+            tokens = stripped.split()
+            if tokens:
+                zone_domain = tokens[0]
     if not zone_domain:
         log_fp.write(f'{datetime.now()}\tSOA not found in {zoneid}\n')
         errors[zoneid] = 'SOA not found'
@@ -362,19 +410,55 @@ def run_test(zoneid: str,
             False, implementations['trustdns'][1])    # TrustDns
         implementations['maradns'] = (
             False, implementations['maradns'][1])    # MaraDns
+    prepare_containers(parent_directory_path / ZONE_FILES /
+                       (zoneid + '.txt'), zone_domain, cid, False, implementations, tag)
+
+    # Wait briefly for each implementation to be ready
+    load_failures = {}
+    for impl, (check, port) in implementations.items():
+        if not check:
+            continue
+        deadline = time.time() + 5
+        ready = False
+        last_resp = None
+        while time.time() < deadline:
+            ready_resp = querier(zone_domain, "SOA", port * int(cid))
+            if isinstance(ready_resp, dns.message.Message):
+                ready = True
+                break
+            last_resp = ready_resp
+            time.sleep(0.5)
+        if not ready:
+            log_fp.write(
+                f'{datetime.now()}\t{impl} not ready for zone {zoneid}, '
+                f'last response: {last_resp}\n')
+            implementations[impl] = (False, port)
+            cname = f'{cid}_{impl}_server'
+            debug = container_debug(cname)
+            load_failures[impl] = {
+                "last_response": "No response" if last_resp is None else str(last_resp),
+                "container": cname,
+                **debug,
+            }
+
+    if load_failures:
+        with open(parent_directory_path / LOAD_FAILURES / (zoneid + '.json'), 'w') as lf_fp:
+            json.dump(load_failures, lf_fp, indent=2)
+
     total_impl_tested = sum(x[0] for x in list(implementations.values()))
     queries = get_queries(zoneid, total_impl_tested,
                           parent_directory_path, log_fp, errors)
     if not queries:
         return
 
-    prepare_containers(parent_directory_path / ZONE_FILES /
-                       (zoneid + '.txt'), zone_domain, cid, False, implementations, tag)
-
     differences = []
     for query in queries:
+        qtype = query.get("Query", {}).get("Type")
+        if qtype == "UPDATE" or "Name" not in query.get("Query", {}):
+            log_fp.write(
+                f'{datetime.now()}\tSkipping UPDATE query for zone {zoneid} (unsupported)\n')
+            continue
         qname = query["Query"]["Name"]
-        qtype = query["Query"]["Type"]
         responses = []
         for impl, (check, port) in implementations.items():
             if check:
@@ -431,10 +515,19 @@ def run_tests(parent_directory_path: pathlib.Path,
     if input_args.latest:
         tag = ':latest'
     start_containers(input_args.id, implementations, tag)
+    (parent_directory_path / LOAD_FAILURES).mkdir(exist_ok=True)
     # Create and dump logs to a file
     with open(parent_directory_path / (str(input_args.id) + '_log.txt'), 'w', 1) as log_fp:
+        def _zone_sort_key(path: pathlib.Path):
+            """Sort numeric stems first, then lexicographically."""
+            stem = path.stem
+            try:
+                return (0, int(stem))
+            except ValueError:
+                return (1, stem)
+
         for zone in sorted((parent_directory_path / ZONE_FILES).iterdir(),
-                           key=lambda x: int(x.stem))[start:end]:
+                           key=_zone_sort_key)[start:end]:
             log_fp.write(f'{datetime.now()}\tChecking zone: {zone.stem}\n')
             run_test(zone.stem, parent_directory_path, errors,
                      input_args.id, implementations, log_fp, tag)

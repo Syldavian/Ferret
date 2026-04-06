@@ -27,7 +27,7 @@ def run(zone_file: pathlib.Path, zone_domain: str, cname: str, port: int, restar
                         '--name=' + cname, 'powerdns' + tag], stdout=subprocess.PIPE, check=False)
     else:
         # Kill the running server instance inside the container
-        subprocess.run(['docker', 'exec', cname, 'pkill',
+        subprocess.run(['docker', 'exec', cname, 'pkill', '-f',
                         'pdns_server'], stdout=subprocess.PIPE, check=False)
     # Copy the new zone file into the container
     subprocess.run(['docker', 'cp', str(zone_file), cname +
@@ -45,5 +45,12 @@ def run(zone_file: pathlib.Path, zone_domain: str, cname: str, port: int, restar
     # configuration '..bindbackend.conf' on line 2: syntax error
     subprocess.run(['docker', 'exec', cname, 'dos2unix',
                     '/usr/local/etc/bindbackend.conf'], stdout=subprocess.PIPE, check=False)
-    subprocess.run(['docker', 'exec', cname,
-                    'pdns_server', '--daemon'], stdout=subprocess.PIPE, check=False)
+    # Ensure log dir exists and start in foreground mode with explicit config dir
+    subprocess.run(['docker', 'exec', cname, 'mkdir', '-p', '/usr/local/var/log'],
+                   stdout=subprocess.PIPE, check=False)
+    subprocess.run(
+        ['docker', 'exec', '-d', cname, 'sh', '-lc',
+         '/usr/local/sbin/pdns_server --daemon=no --guardian=no --config-dir=/usr/local/etc '
+         '> /usr/local/var/log/pdns_server.log 2>&1 &'],
+        stdout=subprocess.PIPE, check=False,
+    )

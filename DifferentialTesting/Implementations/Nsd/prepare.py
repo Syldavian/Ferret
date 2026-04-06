@@ -29,8 +29,8 @@ def run(zone_file: pathlib.Path, zone_domain: str, cname: str, port: int, restar
                         '--name=' + cname, 'nsd' + tag], stdout=subprocess.PIPE, check=False)
     else:
         # Stop the running server instance inside the container
-        subprocess.run(
-            ['docker', 'exec', cname, 'nsd-control', 'stop'], stdout=subprocess.PIPE, check=False)
+        subprocess.run(['docker', 'exec', cname, 'pkill', 'nsd'],
+                       stdout=subprocess.PIPE, check=False)
     # Copy the new zone file into the container
     subprocess.run(['docker', 'cp', str(zone_file),
                     cname + ':/etc/nsd/zones'], stdout=subprocess.PIPE, check=False)
@@ -59,6 +59,6 @@ zone:
     subprocess.run(['docker', 'cp', 'nsd_'+cname+'.conf',
                     cname + ':/etc/nsd/nsd.conf'], stdout=subprocess.PIPE, check=False)
     pathlib.Path('nsd_'+cname+'.conf').unlink()
-    # Start the server
-    subprocess.run(['docker', 'exec', cname, 'nsd-control',
-                    'start'], stdout=subprocess.PIPE, check=False)
+    # Start the server directly (avoid nsd-control socket dependency)
+    subprocess.run(['docker', 'exec', '-d', cname, 'nsd', '-c',
+                    '/etc/nsd/nsd.conf'], stdout=subprocess.PIPE, check=False)

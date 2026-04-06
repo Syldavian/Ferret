@@ -92,15 +92,27 @@ def run(zone_file: pathlib.Path, zone_domain: str, cname: str, port: int, restar
         subprocess.run(['docker', 'run', '-dp', str(port)+':53/udp',
                         '--name=' + cname, 'yadifa' + tag], stdout=subprocess.PIPE, check=False)
     else:
-        # Stop the running server instance inside the container
-        output = subprocess.run(['docker', 'exec', cname, 'yadifa', 'ctrl', '-y',
-                                 'controller-key:ControlDaemonKey', 'shutdown'],
-                                stdout=subprocess.PIPE, check=False)
-        # Yadifa sometimes does not stop the server and might require sending the stop command again
-        if output.returncode != 0:
-            time.sleep(2)
-            subprocess.run(['docker', 'exec', cname, 'yadifa', 'ctrl', '-y',
-                            'controller-key:ControlDaemonKey', 'shutdown'],
+        # Stop the running server instance inside the container if it is running
+        pid_check = subprocess.run(
+            ['docker', 'exec', cname, 'sh', '-lc',
+             'if [ -f /usr/local/var/run/yadifad.pid ]; then '
+             'pid=$(cat /usr/local/var/run/yadifad.pid); '
+             'kill -0 "$pid" 2>/dev/null; fi'],
+            stdout=subprocess.PIPE, check=False)
+        if pid_check.returncode == 0:
+            output = subprocess.run(
+                ['docker', 'exec', cname, 'yadifa', 'ctrl', '-y',
+                 'controller-key:ControlDaemonKey', 'shutdown'],
+                stdout=subprocess.PIPE, check=False)
+            # Yadifa sometimes does not stop the server and might require sending the stop command again
+            if output.returncode != 0:
+                time.sleep(2)
+                subprocess.run(['docker', 'exec', cname, 'yadifa', 'ctrl', '-y',
+                                'controller-key:ControlDaemonKey', 'shutdown'],
+                               stdout=subprocess.PIPE, check=False)
+            # Best-effort cleanup of stale pidfile
+            subprocess.run(['docker', 'exec', cname, 'rm', '-f',
+                            '/usr/local/var/run/yadifad.pid'],
                            stdout=subprocess.PIPE, check=False)
     # Copy the new zone file into the container
     subprocess.run(['docker', 'cp', str(zone_file),
@@ -112,10 +124,11 @@ def run(zone_file: pathlib.Path, zone_domain: str, cname: str, port: int, restar
     subprocess.run(['docker', 'cp', 'yadifad_'+cname+'.conf',
                     cname + ':/usr/local/etc/yadifad.conf'], stdout=subprocess.PIPE, check=False)
     pathlib.Path('yadifad_'+cname+'.conf').unlink()
-    # Start the server
-    server_start = subprocess.run(
-        ['docker', 'exec', cname, 'yadifad', '-d'], stdout=subprocess.PIPE, check=False)
-    if server_start.returncode != 0:
-        time.sleep(2)
-        subprocess.run(['docker', 'exec', cname,
-                        'yadifad', '-d'], stdout=subprocess.PIPE, check=False)
+    # Start the server in foreground mode and capture logs to a file
+    subprocess.run(['docker', 'exec', cname, 'mkdir', '-p', '/usr/local/var/log/yadifa'],
+                   stdout=subprocess.PIPE, check=False)
+    subprocess.run(
+        ['docker', 'exec', '-d', cname, 'sh', '-lc',
+         'yadifad -d > /usr/local/var/log/yadifa/yadifad.log 2>&1 &'],
+        stdout=subprocess.PIPE, check=False,
+    )
