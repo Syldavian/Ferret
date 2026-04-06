@@ -2,11 +2,12 @@
 Builds docker images for the implementations.
 Creates and prints logs to the image_generation_log.txt file.
 
-usage: generate_docker_images.py [-h] [-l] [-b] [-n] [-k] [-p] [-c] [-y] [-m] [-t] [-e]
+usage: generate_docker_images.py [-h] [-l | --oct] [-b] [-n] [-k] [-p] [-c] [-y] [-m] [-t] [-e]
 
 optional arguments:
   -h, --help    show this help message and exit
-  -l, --latest  Build the images using latest code for all implementations. (default: False)
+  -l, --latest  Build the images using latest code for all implementations. (default: True)
+  --oct         Build the historical Oct 2020 images instead of latest. (default: False)
   -b            Disable Bind. (default: False)
   -n            Disable Nsd. (default: False)
   -k            Disable Knot. (default: False)
@@ -70,8 +71,11 @@ if __name__ == '__main__':
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
                             description='Builds docker images for the implementations.'
                             ' (check image_generation_log.txt for logs)')
-    parser.add_argument(
-        '-l', '--latest', help='Build the images using latest code.', action="store_true")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        '-l', '--latest', help='Build the images using latest code (default).', action="store_true")
+    group.add_argument(
+        '--oct', help='Build the historical Oct 2020 images instead of latest.', action="store_true")
     parser.add_argument('-b', help='Disable Bind.', action="store_true")
     parser.add_argument('-n', help='Disable Nsd.', action="store_true")
     parser.add_argument('-k', help='Disable Knot.', action="store_true")
@@ -82,6 +86,11 @@ if __name__ == '__main__':
     parser.add_argument('-t', help='Disable TrustDns.', action="store_true")
     parser.add_argument('-e', help='Disable Technitium.', action="store_true")
     args = parser.parse_args()
+    if args.oct:
+        args.latest = False
+    elif not args.latest:
+        args.latest = True
+
     cmds = []
     if not args.b:
         cmds.append("bind")

@@ -21,7 +21,7 @@ RUN git clone https://github.com/hickory-dns/hickory-dns.git trust-dns
 
 
 RUN cd trust-dns && \
-    /root/.cargo/bin/cargo build --release
+    /root/.cargo/bin/cargo build --release --features dnssec-ring
 
 COPY db.campus.edu trust-dns/tests/test-data/named_test_configs/
 COPY Trustdns/config.toml trust-dns/tests/test-data/named_test_configs/

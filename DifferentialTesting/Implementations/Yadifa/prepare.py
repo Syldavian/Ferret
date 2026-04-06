@@ -22,6 +22,7 @@ YADIFAD = '''
         group                        root
         listen                      0.0.0.0
         allow-notify                none
+        allow-update                any
         allow-control              yadifa-controller
 </main>
 
@@ -72,6 +73,7 @@ YADIFAD = '''
         type                    master
         domain                  {}
         file                    {}
+        allow-update            any
 </zone>
 '''
 
@@ -114,6 +116,12 @@ def run(zone_file: pathlib.Path, zone_domain: str, cname: str, port: int, restar
             subprocess.run(['docker', 'exec', cname, 'rm', '-f',
                             '/usr/local/var/run/yadifad.pid'],
                            stdout=subprocess.PIPE, check=False)
+    # Clear previous writable zone state before copying the next test case.
+    subprocess.run(
+        ['docker', 'exec', cname, 'sh', '-lc',
+         'rm -f /usr/local/var/zones/masters/* /usr/local/var/zones/xfr/*'],
+        stdout=subprocess.PIPE, check=False,
+    )
     # Copy the new zone file into the container
     subprocess.run(['docker', 'cp', str(zone_file),
                     cname + ':/usr/local/var/zones/masters/'], stdout=subprocess.PIPE, check=False)

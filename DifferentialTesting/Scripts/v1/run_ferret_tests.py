@@ -22,7 +22,9 @@ def build_cmd(args: argparse.Namespace) -> List[str]:
     cmd.extend(["-id", str(args.id)])
     if args.range:
         cmd.extend(["-r", str(args.range[0]), str(args.range[1])])
-    if args.latest:
+    if args.oct:
+        cmd.append("--oct")
+    elif args.latest:
         cmd.append("-l")
     # Disable flags pass-through
     for flag in ["b", "n", "k", "p", "c", "y", "m", "t", "e"]:
@@ -38,8 +40,11 @@ def main() -> int:
     parser.add_argument("-id", type=int, default=1, help="Unique id for containers.")
     parser.add_argument("-r", dest="range", nargs=2, type=int, metavar=("START", "END"),
                         help="Optional test index range to run.")
-    parser.add_argument("-l", "--latest", action="store_true",
-                        help="Use latest image tags.")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-l", "--latest", action="store_true",
+                        help="Use latest image tags (default).")
+    group.add_argument("--oct", action="store_true",
+                        help="Use oct image tags instead of latest.")
     # Disable implementations
     parser.add_argument("-b", action="store_true", help="Disable Bind.")
     parser.add_argument("-n", action="store_true", help="Disable NSD.")
@@ -52,6 +57,10 @@ def main() -> int:
     parser.add_argument("-e", action="store_true", help="Disable Technitium.")
     parser.add_argument("--dry-run", action="store_true", help="Print the command and exit.")
     args = parser.parse_args()
+    if args.oct:
+        args.latest = False
+    elif not args.latest:
+        args.latest = True
 
     path = Path(args.path)
     if not path.exists():

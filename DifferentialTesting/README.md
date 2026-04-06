@@ -27,7 +27,8 @@ usage: generate_docker_images.py [-h] [-l] [-b] [-n] [-k] [-p] [-c] [-y] [-m] [-
 
 optional arguments:
 -h, --help    show this help message and exit
--l, --latest  Build the images using latest code. (default: False)
+  -l, --latest  Build the images using latest code. (default: True)
+  --oct         Build the historical Oct 2020 images instead of latest. (default: False)
 -b            Disable Bind. (default: False)
 -n            Disable Nsd. (default: False)
 -k            Disable Knot. (default: False)
@@ -40,8 +41,8 @@ optional arguments:
 ```
 </details>
 
-- By default, the images are built using the implementations code as of around October 1<sup>st</sup>, 2020 (check [Readme](Implementations/README.md) for details). Pass the `-l` flag to use the latest code, but some images may not build if dependecies or other things are updated. Technitium is always built with the latest commit irrespective of the `-l` flag.
-- Without the `-l` flag, the built images will have the `oct` as the image tag; for example, the built Bind image would be `bind:oct`. If the `-l` flag was used to build the images, the tag would be `latest`.
+- By default, the images are built from the latest code and tagged `latest`.
+- Pass `--oct` to build the historical October 2020 pinned images instead; those images are tagged `oct`.
 - _**Note:** Each Docker image consumes  ~&hairsp;1-2&hairsp;GB of disk space._
 - _Est. Time:_ ~&thinsp;30 mins.
 - _Expected Output_: Docker images for the implementations.
@@ -146,7 +147,8 @@ optional arguments:
   -m                    Disable MaraDns. (default: False)
   -t                    Disable TrustDns. (default: False)
   -e                    Disable Technitium. (default: False)
-  -l, --latest          Test using latest image tag. (default: False)
+  -l, --latest          Test using latest image tag. (default: True)
+  --oct                 Test using oct image tag instead of latest. (default: False)
 ```
 - Arguments `-r` and `-id` can be used to parallelize testing. 
     <details>
@@ -189,7 +191,8 @@ mature zone-file preprocessor available.
     -n                    Disable Nsd. (default: False)
     -k                    Disable Knot. (default: False)
     -p                    Disable PowerDns. (default: False)
-    -l, --latest          Test using latest image tag. (default: False)
+    -l, --latest          Test using latest image tag. (default: True)
+    --oct                 Test using oct image tag instead of latest. (default: False)
     ```
     </details>
 
@@ -221,7 +224,8 @@ mature zone-file preprocessor available.
     -n                    Disable Nsd. (default: False)
     -k                    Disable Knot. (default: False)
     -p                    Disable PowerDns. (default: False)
-    -l, --latest          Test using latest image tag. (default: False)
+    -l, --latest          Test using latest image tag. (default: True)
+    --oct                 Test using oct image tag instead of latest. (default: False)
     ```
     </details>
 

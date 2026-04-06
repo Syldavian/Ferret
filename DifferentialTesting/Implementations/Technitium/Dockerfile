@@ -29,4 +29,4 @@ RUN dotnet build TechnitiumLibrary/TechnitiumLibrary/TechnitiumLibrary.csproj -c
 
 RUN dotnet publish DnsServer/DnsServerApp/DnsServerApp.csproj -c Release
 
-CMD ["/bin/bash" "-c" "while :; do sleep 10; done"]
+CMD ["/bin/bash", "-c", "while :; do sleep 10; done"]

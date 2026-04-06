@@ -5,7 +5,7 @@ Either compares responses from mulitple implementations with each other or uses 
 response to flag differences (only when one implementation is passed for testing).
 
 usage: test_with_invalid_zone_files.py [-h] [-path DIRECTORY_PATH]
-                                       [-id {1,2,3,4,5}] [-b] [-n] [-k] [-p] [-l]
+                                       [-id {1,2,3,4,5}] [-b] [-n] [-k] [-p] [-l | --oct]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -17,7 +17,8 @@ optional arguments:
   -n                    Disable Nsd. (default: False)
   -k                    Disable Knot. (default: False)
   -p                    Disable PowerDns. (default: False)
-  -l, --latest          Test using latest image tag. (default: False)
+  -l, --latest          Test using latest image tag. (default: True)
+  --oct                 Test using oct image tag instead of latest. (default: False)
 """
 #!/usr/bin/env python3
 
@@ -322,9 +323,16 @@ if __name__ == '__main__':
     parser.add_argument('-n', help='Disable Nsd.', action="store_true")
     parser.add_argument('-k', help='Disable Knot.', action="store_true")
     parser.add_argument('-p', help='Disable PowerDns.', action="store_true")
-    parser.add_argument(
-        '-l', '--latest', help='Test using latest image tag.', action="store_true")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        '-l', '--latest', help='Test using latest image tag (default).', action="store_true")
+    group.add_argument(
+        '--oct', help='Test using oct image tag instead of latest.', action="store_true")
     args = parser.parse_args()
+    if args.oct:
+        args.latest = False
+    elif not args.latest:
+        args.latest = True
     if "path" in args:
         dir_path = pathlib.Path(args.path)
     else:

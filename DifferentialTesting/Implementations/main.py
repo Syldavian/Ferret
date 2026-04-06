@@ -5,7 +5,7 @@ the zone file into the container. The module also generates the necessar
 implementation-specific configuration files.
 
 usage: main.py [-h] [-z ZONE_FILE_PATH] [-i {yadifa,powerdns,maradns,nsd,
-                        trustdns,bind,knot,coredns,technitium}] [-p UNUSED_PORT] [-c CONTAINER_NAME] [-l] [-e]
+                        trustdns,bind,knot,coredns,technitium}] [-p UNUSED_PORT] [-c CONTAINER_NAME] [-l | --oct] [-e]
 
 Specify an image name and a port to start a fresh container (also container name if you want
 to assign a name) or only the name of an existing container to reuse it.
@@ -16,7 +16,8 @@ optional arguments:
                         The docker image name of the implementation to start a container.
   -p UNUSED_PORT        An unused host port to map to port 53 of the container.
   -c CONTAINER_NAME     A name for the container. (default: Random Docker generated name)
-  -l, --latest          Serve using the latest image tag. (default: Oct 2020 image)
+  -l, --latest          Serve using the latest image tag. (default: True)
+  --oct                 Serve using the Oct 2020 image tag instead of latest.
   -e                    Whether the implementation is Technitium. (default: False)
 """
 
@@ -52,9 +53,7 @@ def load_and_serve_zone_file(zone_file: pathlib.Path,
     :param port: The host port which is mapped to the port 53 of the container
     :param latest: Whether to use the latest tag
     """
-    tag = ':oct'
-    if latest:
-        tag = ':latest'
+    tag = ':latest' if latest else ':oct'
     if image:
         image += tag
         # Check if the docker image exists.
@@ -147,8 +146,11 @@ if __name__ == '__main__':
                         help='An unused host port to map to port 53 of the container.')
     parser.add_argument('-c', metavar='CONTAINER_NAME', type=str,
                         help='A name for the container. (default: Random Docker generated name)')
-    parser.add_argument(
-        '-l', '--latest', help='Serve using the latest image tag.', action="store_true")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        '-l', '--latest', help='Serve using the latest image tag (default).', action="store_true")
+    group.add_argument(
+        '--oct', help='Serve using the oct image tag instead of latest.', action="store_true")
     parser.add_argument(
         '-e', help='Whether the implementation is Technitium.', action="store_true")
     args = parser.parse_args()
@@ -159,6 +161,10 @@ if __name__ == '__main__':
         sys.exit('Error: Specify either an image name and a port to start a fresh '
                  'container (also container name if you want to assign a name) or '
                  'only the name of an existing container to reuse it.')
+    if args.oct:
+        args.latest = False
+    elif not args.latest:
+        args.latest = True
     if args.i and args.i == 'technitium':
         args.e = True
     if args.e and not args.latest:
