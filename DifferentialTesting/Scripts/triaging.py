@@ -2,7 +2,8 @@
 Fingerprint and group tests that resulted in differences.
 
 Legacy query-only differences are grouped by model case plus implementation grouping.
-Dynamic update differences are grouped by scenario/update shape plus reply/post-state grouping.
+Dynamic update differences are grouped both exactly (including scenario category)
+and coarsely (by auth/op/prereq shape plus reply/post-state grouping).
 """
 
 from __future__ import annotations
@@ -53,14 +54,18 @@ def get_model_cases(dir_path: pathlib.Path) -> Dict[str, Dict[str, str]]:
     return model_cases
 
 
-def _summarize_dynamic(vectors: Dict[Any, set]) -> Dict[str, Any]:
+def _group_sig_to_text(signature: Tuple[frozenset[str], ...]) -> str:
+    return " ".join("{" + ",".join(sorted(group)) + "}" for group in signature) or "{all}"
+
+
+def _summarize_dynamic_exact(vectors: Dict[Any, set]) -> Dict[str, Any]:
     summary: List[str] = []
     output: List[Dict[str, Any]] = []
     for key in sorted(vectors.keys(), key=lambda item: str(item)):
         category, auth_mode, prereq_shape, op_shape, divergence_kind, reply_sig, post_sig = key
         tests = sorted(vectors[key])
-        reply_summary = " ".join("{" + ",".join(sorted(group)) + "}" for group in reply_sig) or "{all}"
-        post_summary = " ".join("{" + ",".join(sorted(group)) + "}" for group in post_sig) or "{all}"
+        reply_summary = _group_sig_to_text(reply_sig)
+        post_summary = _group_sig_to_text(post_sig)
         summary.append(
             f"{category} {auth_mode} {prereq_shape} {op_shape} {divergence_kind} "
             f"reply={reply_summary} post={post_summary} count={len(tests)}"
@@ -75,6 +80,36 @@ def _summarize_dynamic(vectors: Dict[Any, set]) -> Dict[str, Any]:
                 "Reply Groups": [sorted(group) for group in reply_sig],
                 "Post-State Groups": [sorted(group) for group in post_sig],
                 "Count": len(tests),
+                "Tests": tests,
+            }
+        )
+    return {"Summary": summary, "Details": output}
+
+
+def _summarize_dynamic_coarse(vectors: Dict[Any, set]) -> Dict[str, Any]:
+    summary: List[str] = []
+    output: List[Dict[str, Any]] = []
+    for key in sorted(vectors.keys(), key=lambda item: str(item)):
+        auth_mode, prereq_shape, op_shape, divergence_kind, reply_sig, post_sig = key
+        items = sorted(vectors[key])
+        tests = sorted((zoneid, stepid) for zoneid, stepid, _category in items)
+        categories = sorted({category for _zoneid, _stepid, category in items})
+        reply_summary = _group_sig_to_text(reply_sig)
+        post_summary = _group_sig_to_text(post_sig)
+        summary.append(
+            f"{auth_mode} {prereq_shape} {op_shape} {divergence_kind} "
+            f"reply={reply_summary} post={post_summary} count={len(tests)} categories={len(categories)}"
+        )
+        output.append(
+            {
+                "Auth Mode": auth_mode,
+                "Prerequisite Shape": prereq_shape,
+                "Operation Shape": op_shape,
+                "Divergence Kind": divergence_kind,
+                "Reply Groups": [sorted(group) for group in reply_sig],
+                "Post-State Groups": [sorted(group) for group in post_sig],
+                "Count": len(tests),
+                "Scenario Categories": categories,
                 "Tests": tests,
             }
         )
@@ -117,13 +152,15 @@ def _summarize_legacy(vectors: Dict[Any, set]) -> Dict[str, Any]:
 
 def fingerprint_group_tests(dir_path: pathlib.Path,
                             model_cases: Dict[str, Dict[str, str]]) -> None:
-    difference_zones = list((dir_path / DIFFERENCES).iterdir())
+    difference_dir = dir_path / DIFFERENCES
+    difference_zones = [path for path in difference_dir.iterdir() if path.is_file() and path.suffix == '.json']
     has_model_cases = [zone.stem in model_cases for zone in difference_zones]
     if difference_zones and not all(has_model_cases) and any(has_model_cases):
         sys.exit(f"Some of the tests have model cases and others do not in {dir_path}")
 
     legacy_vectors = defaultdict(set)
-    dynamic_vectors = defaultdict(set)
+    dynamic_exact_vectors = defaultdict(set)
+    dynamic_coarse_vectors = defaultdict(set)
 
     for diff in difference_zones:
         diff_json = _load_json(diff)
@@ -131,16 +168,33 @@ def fingerprint_group_tests(dir_path: pathlib.Path,
         for difference in diff_json:
             if difference.get("Type") == "DynamicUpdate":
                 seed = difference.get("Fingerprint Seed", {})
-                key = (
-                    seed.get("scenario_category", difference.get("Scenario Category", "-")),
-                    seed.get("auth_mode", difference.get("Auth Mode", "none")),
-                    seed.get("prerequisite_shape", difference.get("Prerequisite Shape", "-")),
-                    seed.get("operation_shape", difference.get("Operation Shape", "-")),
-                    seed.get("divergence_kind", difference.get("Divergence Kind", "-")),
-                    _servers_signature(difference.get("Reply Groups", [])),
-                    _servers_signature(difference.get("Post-State Groups", [])),
+                category = seed.get("scenario_category", difference.get("Scenario Category", "-"))
+                auth_mode = seed.get("auth_mode", difference.get("Auth Mode", "none"))
+                prereq_shape = seed.get("prerequisite_shape", difference.get("Prerequisite Shape", "-"))
+                op_shape = seed.get("operation_shape", difference.get("Operation Shape", "-"))
+                divergence_kind = seed.get("divergence_kind", difference.get("Divergence Kind", "-"))
+                reply_sig = _servers_signature(difference.get("Reply Groups", []))
+                post_sig = _servers_signature(difference.get("Post-State Groups", []))
+                exact_key = (
+                    category,
+                    auth_mode,
+                    prereq_shape,
+                    op_shape,
+                    divergence_kind,
+                    reply_sig,
+                    post_sig,
                 )
-                dynamic_vectors[key].add((zoneid, difference.get("Update Step", "-")))
+                coarse_key = (
+                    auth_mode,
+                    prereq_shape,
+                    op_shape,
+                    divergence_kind,
+                    reply_sig,
+                    post_sig,
+                )
+                update_step = difference.get("Update Step", "-")
+                dynamic_exact_vectors[exact_key].add((zoneid, update_step))
+                dynamic_coarse_vectors[coarse_key].add((zoneid, update_step, category))
                 continue
 
             query_str = difference["Query Name"] + ":" + difference["Query Type"]
@@ -160,8 +214,10 @@ def fingerprint_group_tests(dir_path: pathlib.Path,
     output = {}
     if legacy_vectors:
         output["Legacy"] = _summarize_legacy(legacy_vectors)
-    if dynamic_vectors:
-        output["DynamicUpdate"] = _summarize_dynamic(dynamic_vectors)
+    if dynamic_exact_vectors:
+        output["DynamicUpdateExact"] = _summarize_dynamic_exact(dynamic_exact_vectors)
+    if dynamic_coarse_vectors:
+        output["DynamicUpdateCoarse"] = _summarize_dynamic_coarse(dynamic_coarse_vectors)
     with open(dir_path / "Fingerprints.json", "w") as fp:
         json.dump(output, fp, indent=2)
 
