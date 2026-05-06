@@ -107,10 +107,30 @@ def run(zone_file: pathlib.Path, zone_domain: str, cname: str, port: int, restar
                                               "domain": name.to_text(),
                                               "token": token}
                                 if rdata.rdtype == RdataType.SOA:
-                                    # Technitium creates the zone's SOA on zone creation and
-                                    # validates edits more strictly than several other servers.
-                                    # Leave the generated SOA as-is for now and load the
-                                    # remaining records via the API so the zone stays servable.
+                                    # Technitium synthesizes a default SOA at zone-create time
+                                    # (PrimaryZone.cs constructor — MNAME = container hostname,
+                                    # default RFC defaults for timers). Replace it with the
+                                    # operator-supplied SOA from the master file via the SOA
+                                    # branch of /api/zones/records/update. Without this, every
+                                    # apex SOA query against Technitium returns the synthesized
+                                    # default, which diverges from bind/knot/yadifa and breaks
+                                    # any rrset_equals prereq that targets the apex SOA.
+                                    update_url = f'http://localhost:{str(port + 1)}/api/zones/records/update'
+                                    soa_data = {
+                                        "token": token,
+                                        "zone": zone_domain,
+                                        "domain": name.to_text(),
+                                        "type": "SOA",
+                                        "ttl": str(rdataset.ttl),
+                                        "primaryNameServer": rdata.mname.to_text().rstrip('.'),
+                                        "responsiblePerson": rdata.rname.to_text().rstrip('.'),
+                                        "serial": str(rdata.serial),
+                                        "refresh": str(rdata.refresh),
+                                        "retry": str(rdata.retry),
+                                        "expire": str(rdata.expire),
+                                        "minimum": str(rdata.minimum),
+                                    }
+                                    _post(update_url, soa_data, f"SOA update for zone {zone_file.stem}")
                                     continue
                                 else:
                                     add_url = f'http://localhost:{str(port + 1)}/api/zones/records/add'
