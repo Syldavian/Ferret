@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Simultaneous add of CNAME and sibling data to the same name",
+  "test_rationale": "This test isolates the underspecified intra-UPDATE conflict resolution for simultaneous add_rr operations that would create an illegal CNAME-and-sibling coexistence at one owner name. The zone starts with the name absent, so the only question is how the server handles the conflicting additions within the same UPDATE. Querying both CNAME and A afterward makes it possible to distinguish a reject-all implementation from one that accepts a partial outcome.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accept one RR and suppress the other, or otherwise normalize to a single surviving RRset at mix.campus.edu.",
+        "reply_rcode": "NOERROR",
+        "post_state": "mix.campus.edu. has only a CNAME rrset, or only an A rrset, but not both."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the UPDATE as a CNAME-sibling conflict.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "mix.campus.edu. remains absent."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 forbids a CNAME from coexisting with other data at the same owner name, but RFC 2136 does not specify transactional semantics for a single UPDATE that attempts to create that forbidden state via multiple add_rr operations in the same packet. As a result, implementations can differ on whether they reject the whole UPDATE or apply a deterministic subset of the requested RRs."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

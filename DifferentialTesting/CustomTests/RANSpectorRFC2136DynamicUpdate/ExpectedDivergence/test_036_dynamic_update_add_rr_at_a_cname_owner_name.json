@@ -1,0 +1,44 @@
+{
+  "scenario_title": "Add RR at a CNAME owner name",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181",
+    "1034"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the UPDATE because the owner name already has a CNAME, returning a non-success RCODE and leaving the zone unchanged.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "alias.campus.edu. remains CNAME-only; QUERY type A returns no answer, QUERY type CNAME returns the original CNAME rrset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept or differently normalize the UPDATE attempt, potentially replying NOERROR while preserving the CNAME-only state or applying an implementation-specific coexistence rule.",
+        "reply_rcode": "NOERROR",
+        "post_state": "alias.campus.edu. may remain CNAME-only or otherwise differ from BIND's post-state as seen by follow-up QUERYs."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines how UPDATE encodes add_rr, but it does not mandate a unique RCODE or state transition for adding ordinary data at an owner name already occupied by a CNAME. RFC 2181 §10.1 states that a CNAME cannot coexist with other data, yet it does not prescribe the precise dynamic-update failure mode or post-update normalization behavior for this exact case, so implementations may legitimately diverge in both reply and resulting visible state.",
+    "test_rationale": "This scenario isolates the protocol gap by starting with a valid CNAME owner name and then issuing a single add_rr for an A RR at that same owner. That is the precise conflict RFC 2181 describes but RFC 2136 does not operationally resolve for UPDATE processing. By querying the same owner for both A and CNAME afterward, Ferret can observe either a refusal with no state change or an acceptance/normalization path, making the difference binary and testable across BIND and Knot.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

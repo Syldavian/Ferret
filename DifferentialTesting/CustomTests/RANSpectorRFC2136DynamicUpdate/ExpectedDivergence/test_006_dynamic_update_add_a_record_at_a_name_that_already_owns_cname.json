@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add a record at a name that already owns CNAME",
+  "test_rationale": "This test starts with a minimal zone containing a single CNAME owner and then attempts one unsigned UPDATE that adds an A RR at that same owner name. The prerequisites are intentionally absent so the only decision point is how the server resolves the CNAME-versus-other-data conflict. RFC 2136 does not prescribe a specific refusal code or overwrite behavior for this case, while RFC 2181 only gives the coexistence rule as a guideline, making this a good binary-oracle candidate based on both the UPDATE reply and the post-update QUERY results.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the UPDATE when adding a non-CNAME RR to a name that already owns a CNAME, typically preserving the original CNAME-only state.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "QUERY ANY returns only the original CNAME; QUERY A returns no A RR."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept the UPDATE and retain or create coexisting data at the owner name despite the pre-existing CNAME, or otherwise handle the conflict without the same refusal code.",
+        "reply_rcode": "NOERROR",
+        "post_state": "QUERY ANY or QUERY A shows the added A RR, possibly alongside the original CNAME."
+      }
+    },
+    "why_divergence": "RFC 2136 defines the mechanics of add_rr but does not specify a special update-state transition for inserting a non-CNAME RR at an owner name that already has a CNAME. RFC 2181 §10.1 says a CNAME should not coexist with other data, but it does not normatively pin the dynamic-update RCODE or mandate whether the server must refuse, replace, or reorder the change. That leaves a protocol gap that can surface both in the UPDATE reply and in the resulting RRset state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

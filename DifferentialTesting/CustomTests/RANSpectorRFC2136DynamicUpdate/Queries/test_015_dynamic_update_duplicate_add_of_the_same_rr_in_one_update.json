@@ -1,0 +1,47 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "duplicate_add_rr",
+  "Notes": "One UPDATE contains two identical add_rr operations for the same owner/type/class/TTL/RDATA. The target name starts with a single TXT RR so set-normalizing servers may reply differently from implementations that reject or otherwise handle the redundant second add.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add the same TXT RR to dup.campus.edu. twice in one UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "dup.campus.edu.",
+          "Type": "TXT",
+          "Rrs": [
+            "dup.campus.edu. 500 IN TXT \"v\""
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "dup.campus.edu. 500 IN TXT \"v\""
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "dup.campus.edu. 500 IN TXT \"v\""
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "dup.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RRset remains a single logical TXT RR or whether the UPDATE was rejected."
+    }
+  ]
+}

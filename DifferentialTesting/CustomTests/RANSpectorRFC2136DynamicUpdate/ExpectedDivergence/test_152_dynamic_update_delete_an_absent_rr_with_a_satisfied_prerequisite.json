@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Delete an absent RR with a satisfied prerequisite",
+  "test_rationale": "This test isolates the underspecified case where the server has already established that the TXT RRset at x.campus.edu. exists, but the UPDATE then tries to delete a specific TXT RR that is not a member of that RRset. The zone starts with a single TXT RR so the prerequisite is satisfied and the delete target is definitely absent. Because RFC 2136 does not clearly say whether this should be a silent no-op or an error, the key observable is the UPDATE RCODE, with a follow-up QUERY confirming the RRset stayed intact in either case.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat the absent specific RR delete as a harmless no-op once the RRset prerequisite is satisfied.",
+        "reply_rcode": "NOERROR",
+        "post_state": "x.campus.edu. TXT remains present with \"alpha\"."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the UPDATE because the targeted RR is not present, despite the rrset_exists prerequisite.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "x.campus.edu. TXT remains present with \"alpha\"."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.3 defines delete_rr syntax, and §3.4.2.2/§3.4.2.3 define prerequisite evaluation, but the RFC does not clearly specify whether deleting a specific absent RR after a successful rrset_exists prerequisite must be accepted as an idempotent no-op or rejected as an error. Implementations may therefore diverge in UPDATE reply code while leaving the zone unchanged."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

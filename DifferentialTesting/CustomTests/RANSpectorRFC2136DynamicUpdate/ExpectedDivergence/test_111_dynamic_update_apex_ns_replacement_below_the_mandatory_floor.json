@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Apex NS replacement below the mandatory floor",
+  "test_rationale": "This test targets the underspecified boundary where a syntactically valid UPDATE replaces the zone apex NS RRset with a smaller set in one transaction. The RFCs require the origin to have NS and SOA, but they do not say whether servers must enforce that invariant atomically during UPDATE processing or may permit the new, smaller rrset to stand. By querying the apex NS RRset after the UPDATE, the test distinguishes implementations that accept and persist the reduced rrset from those that reject or roll back the change.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accept the UPDATE and install the reduced apex NS RRset.",
+        "reply_rcode": "NOERROR",
+        "post_state": "campus.edu. NS rrset contains only ns1.alt.campus.edu."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject or roll back the UPDATE because the apex NS floor is enforced during validation.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "campus.edu. NS rrset remains the original two-record set."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines UPDATE message processing but does not prescribe atomic validation of zone-invariant apex NS requirements. RFC 2181 §6.1 requires the zone origin to have NS and SOA, yet it leaves undefined whether a single UPDATE that deletes the existing apex NS RRset and adds a smaller replacement must be accepted, rejected, or rolled back when that transition temporarily or finally leaves the zone below an implementation's minimum NS policy."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

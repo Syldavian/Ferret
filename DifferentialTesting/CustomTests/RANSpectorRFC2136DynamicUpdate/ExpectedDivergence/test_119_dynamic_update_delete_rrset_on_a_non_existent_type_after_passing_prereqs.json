@@ -1,0 +1,40 @@
+{
+  "scenario_title": "delete_rrset on a non-existent type after passing prereqs",
+  "test_rationale": "This test first ensures the UPDATE is otherwise admissible by asserting an existing A rrset at the owner name, then issues a delete_rrset for MX even though no MX RRset exists at that node. That isolates the underspecified choice point in RFC 2136: whether absent-type deletion is silently successful or reported as an error. The follow-up MX query records the post-state, which should remain absent in either case, so the primary oracle is the UPDATE reply RCODE.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats delete_rrset for an absent MX rrset as a successful no-op after prerequisites pass.",
+        "reply_rcode": "NOERROR",
+        "post_state": "i.campus.edu. has no MX rrset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE because the targeted RRset does not exist, returning a semantic failure.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "i.campus.edu. has no MX rrset."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2.2 defines the delete_rrset syntax, but RFC 2136 §3.4.1 does not require a specific RCODE when the target RRset is absent and all prerequisites succeed. As a result, compliant servers may either accept the UPDATE as an idempotent no-op or fail it with NXRRSET/SERVFAIL-like semantics, while the visible post-state can remain unchanged."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "same_name_add_delete_rrset",
+  "Notes": "Single UPDATE contains an add_rr and a delete_rrset for the same owner/type. The prerequisite ensures the name exists before the UPDATE. Follow-up QUERY checks whether the RRset survives, is removed, or the UPDATE was rejected.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add an A RR to x.campus.edu. and delete the entire x.campus.edu. A RRset in the same UPDATE message.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "x.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "x.campus.edu. 500 IN A 192.0.2.11"
+        },
+        {
+          "Kind": "delete_rrset",
+          "Name": "x.campus.edu.",
+          "Type": "A"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "x.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RRset exists after the UPDATE."
+    }
+  ]
+}

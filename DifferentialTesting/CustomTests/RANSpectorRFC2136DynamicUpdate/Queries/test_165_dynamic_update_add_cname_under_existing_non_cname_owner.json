@@ -1,0 +1,50 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_conflict_under_existing_rrset",
+  "Notes": "Add a CNAME at an owner that already has an A RRset, then query both A and CNAME to observe whether the server rejects the update or applies it inconsistently.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to add a CNAME at multi.campus.edu., which already has an A RRset.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "multi.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "multi.campus.edu. 300 IN CNAME other.campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "multi.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the original A RRset remains after the UPDATE."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "multi.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether a CNAME RRset was installed at the same owner name."
+    }
+  ]
+}

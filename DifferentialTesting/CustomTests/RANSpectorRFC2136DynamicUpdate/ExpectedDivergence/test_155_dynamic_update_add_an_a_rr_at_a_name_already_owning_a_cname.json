@@ -1,0 +1,42 @@
+{
+  "scenario_title": "Add an A RR at a name already owning a CNAME",
+  "test_rationale": "The zone starts with x.campus.edu. as a CNAME and the UPDATE attempts to add an A RR at the same owner. This directly exercises the underspecified inverse CNAME conflict during UPDATE processing. Querying both A and CNAME afterward makes it possible to distinguish implementations that reject the update, accept it but ignore the A, or otherwise alter the node state.",
+  "involved_rfcs": [
+    "2136",
+    "2181",
+    "1034"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the UPDATE because a non-CNAME RR cannot coexist with an existing CNAME at the owner name.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "x.campus.edu. remains a CNAME only; no A RRset is created."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept the UPDATE but preserve the existing CNAME, effectively ignoring the added A RR.",
+        "reply_rcode": "NOERROR",
+        "post_state": "x.campus.edu. still answers with the original CNAME only; no A RRset is visible."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.3 specifies add_rr processing in general but does not precisely define the transition when a non-CNAME RR is added to a name already owning a CNAME. RFC 1034 §3.6.2 and RFC 2181 §10.1 prohibit CNAME cohabitation, but they do not prescribe whether the UPDATE must be rejected, silently ignored, or must rewrite the node by removing the CNAME. That leaves room for differing reply codes and post-update zone states."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

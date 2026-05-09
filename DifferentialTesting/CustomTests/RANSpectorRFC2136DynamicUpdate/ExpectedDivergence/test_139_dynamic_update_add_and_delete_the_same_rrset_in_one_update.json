@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add and delete the same RRset in one UPDATE",
+  "test_rationale": "This test creates a single syntactically valid UPDATE that first adds a TXT RRset and then deletes that same RRset. The protocol does not mandate whether the server must apply operations in order, collapse them as a set, or reject the conflict, so BIND and Knot may differ either in the UPDATE reply code or in the resulting zone state. A follow-up QUERY on the touched name makes the outcome observable in a binary way.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Applies the UPDATE operations sequentially or treats the delete as removing the just-added RRset, resulting in no TXT RRset after a successful UPDATE.",
+        "reply_rcode": "NOERROR",
+        "post_state": "no TXT RRset at a.example.campus.edu."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the conflicting in-message add/delete for the same RRset as a semantic error, or preserves the TXT RRset if it interprets the later delete as ineffective.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "TXT RRset present at a.example.campus.edu. or unchanged failure state"
+      }
+    },
+    "why_divergence": "RFC 2136 defines the UPDATE message format and operation types, but it does not specify a required evaluation order or conflict-resolution rule when an add_rr and delete_rrset target the same owner/type within one Update Section. RFC 2136 §7.2 also notes that data-present/absent conditions belong in prerequisites, not as update-section error conditions, leaving this same-message contradiction underspecified."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

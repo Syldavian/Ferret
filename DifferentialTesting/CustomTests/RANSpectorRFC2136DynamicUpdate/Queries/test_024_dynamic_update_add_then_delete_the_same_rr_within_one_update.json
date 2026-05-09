@@ -1,0 +1,38 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "same_rr_add_delete_in_one_update",
+  "Notes": "The zone starts with x.campus.edu. A 192.0.2.10 present so the UPDATE can legally add the identical RR and later delete it within the same message. RFC 2136 describes the update list as a sequence of changes but does not specify whether servers must apply them strictly sequentially, normalize contradictory operations, or reject them.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add the exact same RR that already exists, then delete the exact same RR in the same UPDATE with no prerequisites.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "x.campus.edu. 500 IN A 192.0.2.10"
+        },
+        {
+          "Kind": "delete_rr",
+          "Rr": "x.campus.edu. 500 IN A 192.0.2.10"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "x.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RR remains present after the UPDATE."
+    }
+  ]
+}

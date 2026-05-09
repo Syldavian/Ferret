@@ -1,0 +1,39 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_exclusivity_update_gap",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add a CNAME at x.campus.edu., which already owns A and MX data, to probe whether the server rejects the UPDATE or applies CNAME exclusivity cleanup implicitly.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "x.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "x.campus.edu. 500 IN CNAME alias.campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "x.campus.edu.",
+      "Type": "ANY",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether x.campus.edu. still has A/MX data, has only CNAME, or is absent after the UPDATE."
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Add CNAME where the owner already has other RR types",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the update because the owner already has incompatible data, leaving the original A and MX RRsets in place.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "m.campus.edu. still has A and MX; no CNAME is present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept the update and resolve the conflict by replacing the existing data with the CNAME.",
+        "reply_rcode": "NOERROR",
+        "post_state": "m.campus.edu. has only the CNAME RRset; the A and MX RRsets are removed."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 makes CNAME exclusivity mandatory, but RFC 2136 §3.4.2 does not normatively define whether an UPDATE that adds a CNAME to an owner already holding other RR types must be rejected, implicitly cleaned up, or partially applied. That leaves the server's conflict-resolution policy undefined, producing different reply codes and different resulting zone state.",
+    "test_rationale": "The zone starts with m.campus.edu. as a multi-type owner containing A and MX records. A single UPDATE then adds a CNAME at the same owner without prerequisites. Because the protocol text requires CNAME exclusivity but does not specify the UPDATE-time conflict resolution strategy, implementations may diverge either by refusing the update with YXRRSET and preserving the original RRsets or by accepting it and removing the existing data. The follow-up CNAME and A queries make both the reply and the resulting post-state observable.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

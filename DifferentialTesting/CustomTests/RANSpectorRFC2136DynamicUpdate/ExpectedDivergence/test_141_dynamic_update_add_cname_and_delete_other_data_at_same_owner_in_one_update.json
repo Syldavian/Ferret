@@ -1,0 +1,44 @@
+{
+  "scenario_title": "Add CNAME and delete other data at same owner in one UPDATE",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "1034",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Processes the delete and add as a legal transition to a CNAME-only owner, returning success.",
+        "reply_rcode": "NOERROR",
+        "post_state": "cnameX.campus.edu. has CNAME target.campus.edu. and no A rrset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE when it detects the CNAME exclusivity conflict against the starting state or as an intra-message violation.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "cnameX.campus.edu. remains with A 192.0.2.30 and no CNAME."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines add/delete encoding but not the evaluation order for conflicting changes to the same owner in one UPDATE. RFC 1034 §3.6.2 and RFC 2181 §10.1 require that a CNAME owner have no other data, but they do not specify whether a server may treat a same-message delete of the other data as satisfying that rule before validating the CNAME add. As a result, implementations can reasonably differ between accepting the final CNAME-only state and rejecting the message with YXRRSET/SERVFAIL based on the pre-update state.",
+    "test_rationale": "This test starts with a simple A rrset at cnameX.campus.edu. and issues one UPDATE that both adds a CNAME and deletes the existing A rrset. That shape directly exercises the underspecified ordering between CNAME exclusivity checks and same-message deletes. A server that applies deletes first can end in a legal CNAME-only owner and answer NOERROR, while a server that validates the CNAME add against the pre-update state may reject the transaction. The follow-up CNAME and A queries make the final state observable and turn the ambiguity into a binary oracle.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

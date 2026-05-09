@@ -1,0 +1,43 @@
+{
+  "scenario_title": "TTL-mismatched add_rr into an existing RRset",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE with NOERROR and normalizes the RRset TTL on the wire in the subsequent QUERY, typically serving a consistent TTL for both A RRs.",
+        "reply_rcode": "NOERROR",
+        "post_state": "t.campus.edu. answers with two A RRs: 192.0.2.80 and 192.0.2.81, with a unified served TTL."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE or otherwise declines to apply the mismatched-TTL addition, making the new RR absent in the follow-up QUERY.",
+        "reply_rcode": "REFUSED",
+        "post_state": "t.campus.edu. remains a single-RR A rrset containing only 192.0.2.80."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines the add_rr wire operation but does not specify how an authority must handle a TTL that differs from existing members of the RRset. RFC 2181 §5.2 requires consistency within an RRset, but it does not mandate whether dynamic update should normalize, accept-and-coerce, or reject the addition. That leaves both UPDATE reply handling and resulting RRset contents underspecified.",
+    "test_rationale": "This test starts with a valid A RRset and uses a single UPDATE to add another A RR whose TTL is intentionally different from the existing RRset TTL. The protocol gap is exactly the server-side policy for mismatched TTLs during dynamic update: some implementations may accept the change and normalize the RRset, while others may reject it and leave the set unchanged. A follow-up QUERY on the touched owner name makes both the update result and the post-state observable in a binary way.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

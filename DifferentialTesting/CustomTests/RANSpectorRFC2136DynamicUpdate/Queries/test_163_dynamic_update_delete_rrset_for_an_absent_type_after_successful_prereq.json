@@ -1,0 +1,41 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "absent_rrset_delete_reply_semantics",
+  "Notes": "Prereq proves the zone is writable using an existing helper RRset, then the UPDATE deletes a TXT RRset that is absent at absent.campus.edu. Servers may accept the no-op delete or signal NXRRSET.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Pass an rrset_exists prerequisite on helper.campus.edu. A, then request deletion of an absent TXT RRset at absent.campus.edu.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "helper.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "absent.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "absent.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe that the TXT RRset remains absent regardless of the UPDATE reply semantics."
+    }
+  ]
+}

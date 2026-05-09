@@ -1,0 +1,40 @@
+{
+  "scenario_title": "delete_rrset of a non-existent type after successful prerequisites",
+  "test_rationale": "This test isolates the protocol gap by making the prerequisite succeed at a name that definitely exists, then issuing a delete_rrset for a different type that is absent at that same owner. Since the zone should not change either way, the only meaningful oracle is the UPDATE reply RCODE, which is exactly where implementations may diverge under RFC 2136’s underspecification.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats delete_rrset of an absent type as a successful no-op when prerequisites are satisfied, so the UPDATE completes.",
+        "reply_rcode": "NOERROR",
+        "post_state": "emptytype.campus.edu. still has its A RRset; no TXT RRset is present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Signals a semantic failure for deleting a non-existent RRset type and rejects the UPDATE.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "emptytype.campus.edu. still has its A RRset; no TXT RRset is present."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.4 defines delete_rrset syntax and intent, but does not specify the RCODE when the target RRset type is absent and the prerequisite section has already succeeded; §3.4.2 only defines prerequisite failure handling. As a result, servers may legitimately answer NOERROR or NXRRSET-like failure for the same UPDATE."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

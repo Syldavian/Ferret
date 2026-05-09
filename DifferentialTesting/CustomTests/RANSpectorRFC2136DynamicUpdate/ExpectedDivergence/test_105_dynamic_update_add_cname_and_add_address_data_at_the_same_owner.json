@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add CNAME and add address data at the same owner",
+  "test_rationale": "The test starts with a clean A RRset at cname1.campus.edu. and then sends one UPDATE that adds both a CNAME and an A RR to the same owner. This creates a semantic conflict that RFC 2181 forbids but RFC 2136 does not resolve operationally within one message. The follow-up CNAME and A queries make it possible to distinguish servers that reject the update, preserve only the CNAME, or keep the A data.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE as NOERROR and keeps only the newly added CNAME, removing or suppressing the A data to preserve CNAME exclusivity.",
+        "reply_rcode": "NOERROR",
+        "post_state": "cname1.campus.edu. has CNAME target.campus.edu.; A RRset absent."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE with YXRRSET when the added CNAME conflicts with existing or concurrently added address data at the same owner name.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "cname1.campus.edu. remains with its original A RRset; no CNAME present."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 and §10.3 require CNAME exclusivity, but RFC 2136 §3.4.2 does not define the required server behavior when a single UPDATE introduces both a CNAME and other data at the same owner name. As a result, implementations may reject the UPDATE, accept only one RRset, or enforce exclusivity by deleting conflicting data, producing different replies and post-update RRsets."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

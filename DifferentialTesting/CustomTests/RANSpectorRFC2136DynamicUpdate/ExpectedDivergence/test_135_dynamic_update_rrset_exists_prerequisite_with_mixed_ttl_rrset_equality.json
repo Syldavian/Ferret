@@ -1,0 +1,41 @@
+{
+  "scenario_title": "rrset_exists prerequisite with mixed-TTL RRset equality",
+  "test_rationale": "This test creates a deliberately malformed in-zone RRset containing two otherwise identical A records with different TTLs, then uses rrset_equals against that RRset as the sole prerequisite of a harmless UPDATE. If the server compares RRsets while ignoring or normalizing TTL, the prerequisite is satisfied and the subsequent add_rr at probe.campus.edu. commits, producing a visible post-state change. If the server treats mixed TTLs as non-matching for rrset_equals, it returns an error such as NXRRSET and the add_rr is not applied. The follow-up queries let Ferret observe both the UPDATE outcome and the resulting zone state.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats the mixed-TTL RRset as matching rrset_equals, so the UPDATE succeeds and the add_rr executes.",
+        "reply_rcode": "NOERROR",
+        "post_state": "probe.campus.edu. exists with A 198.51.100.9; www.campus.edu. remains present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the mixed-TTL RRset as non-matching or rejects the prerequisite because TTL equality is not satisfied, so the UPDATE fails before executing the operation.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "probe.campus.edu. does not gain A 198.51.100.9; www.campus.edu. remains unchanged."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.2 and §3.4.1 define rrset_equals in terms of RRsets but do not specify whether TTL participates in equality, and RFC 2181 §5.2 only states that TTLs in an RRset should be equal without defining UPDATE prerequisite semantics for zones that already violate that rule. A server may therefore normalize/ignore TTLs and accept the prerequisite, or may require exact match behavior that fails on the malformed mixed-TTL RRset."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

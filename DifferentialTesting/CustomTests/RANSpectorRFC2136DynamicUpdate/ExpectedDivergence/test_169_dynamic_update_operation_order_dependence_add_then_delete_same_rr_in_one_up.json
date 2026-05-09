@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Operation-order dependence: add then delete same RR in one UPDATE",
+  "test_rationale": "This test isolates a single temporal-ordering choice inside one UPDATE: the server must decide whether to treat the section as a sequential script or as a batch with normalization/conflict handling. By preconditioning ord.campus.edu. A to be absent, then adding and deleting the exact same RR in one message, the scenario exercises the underspecified intra-message evaluation model while keeping the follow-up QUERY simple and within the touched name space.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Processes UPDATE terms sequentially; add then delete of the same RR yields no net change and succeeds.",
+        "reply_rcode": "NOERROR",
+        "post_state": "rrset absent"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Normalizes or revalidates the UPDATE as a batch and may reject or otherwise differ when it encounters contradictory same-message add/delete operations.",
+        "reply_rcode": "NOERROR",
+        "post_state": "rrset absent"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2–§3.4.3 define the meaning of add and delete operations but do not prescribe whether multiple UPDATE RRs must be applied strictly in message order or can be coalesced/revalidated as a batch. That leaves the intra-message conflict resolution model unspecified, so an add_rr followed by delete_rr of the same RR can produce different server behavior even without concurrency."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

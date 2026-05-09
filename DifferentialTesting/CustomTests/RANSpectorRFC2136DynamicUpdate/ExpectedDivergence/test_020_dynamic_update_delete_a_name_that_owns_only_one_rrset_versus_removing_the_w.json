@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Delete a name that owns only one RRset versus removing the whole name",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "post_state_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Deleting the last RRset removes the owner name from the namespace, so subsequent queries for leaf.campus.edu. return NXDOMAIN.",
+        "reply_rcode": "NOERROR",
+        "post_state": "leaf.campus.edu. is nonexistent; q1 and q2 both observe NXDOMAIN."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Deleting the last RRset leaves an empty owner placeholder, so the name remains in use even though it has no RRsets.",
+        "reply_rcode": "NOERROR",
+        "post_state": "leaf.campus.edu. exists as an empty node; q1 gets NXRRSET for TXT and q2 gets NXRRSET for A."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines delete_rrset, and §3.4.4 defines delete_name, but neither specifies whether removing the final RRset at a non-apex owner must also eliminate the owner name itself from the namespace. RFC 2181 §5.2 discusses RRsets but does not settle the bookkeeping of an empty owner node. As a result, implementations may differ on whether name_in_use remains true after the last RRset is deleted, which is directly visible in follow-up queries and prerequisite evaluation.",
+    "test_rationale": "The test creates the smallest possible non-apex name with exactly one RRset, deletes that RRset with delete_rrset, and then queries the same owner for two types. If the server collapses the owner entirely, queries return NXDOMAIN; if it retains an empty placeholder node, the queries return NXRRSET. This exercises the underspecified transition between deleting the last RRset and deleting the name itself, while staying within a single UPDATE followed by read-only observation.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

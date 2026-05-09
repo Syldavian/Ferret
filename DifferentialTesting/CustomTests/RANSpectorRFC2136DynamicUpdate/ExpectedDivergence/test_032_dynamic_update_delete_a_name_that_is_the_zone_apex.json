@@ -1,0 +1,44 @@
+{
+  "scenario_title": "Delete a name that is the zone apex",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181",
+    "3007"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Refuse the apex delete_name UPDATE and leave the apex SOA/NS unchanged.",
+        "reply_rcode": "REFUSED",
+        "post_state": "campus.edu. still has its original SOA and NS rrsets."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept the apex delete_name UPDATE and reconcile apex infrastructure differently, potentially deleting and then regenerating apex records or otherwise altering the apex rrsets.",
+        "reply_rcode": "NOERROR",
+        "post_state": "campus.edu. SOA/NS post-state differs from the untouched original apex rrsets."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines delete_name generally, but does not prescribe a unique UPDATE-time outcome when the target is the zone apex. RFC 2181 §5.3.1 and RFC 3007 §4.4 recognize the special role and maintenance of apex SOA/NS infrastructure, yet they do not give a single mandatory behavior for an apex delete_name request. Servers may therefore refuse the update or accept it and reconcile apex data differently.",
+    "test_rationale": "This test issues exactly one UPDATE that uses delete_name on the zone apex, the most direct way to trigger the underspecified interaction between generic name deletion and apex invariants. The follow-up SOA and NS queries make both the immediate reply and any resulting apex state visible, allowing BIND and Knot differences to surface as either refusal versus acceptance or as different post-update apex rrsets.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

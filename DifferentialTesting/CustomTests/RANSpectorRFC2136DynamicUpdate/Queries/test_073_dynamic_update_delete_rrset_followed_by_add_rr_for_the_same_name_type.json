@@ -1,0 +1,45 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_then_readd_same_rrset",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the existing host1.campus.edu. A RRset and then add a new A RR for the same owner/type within the same UPDATE message.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "host1.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "host1.campus.edu.",
+          "Type": "A"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "host1.campus.edu. 500 IN A 192.0.2.20"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host1.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the final A RRset contains the newly added record or is absent after the UPDATE."
+    }
+  ]
+}

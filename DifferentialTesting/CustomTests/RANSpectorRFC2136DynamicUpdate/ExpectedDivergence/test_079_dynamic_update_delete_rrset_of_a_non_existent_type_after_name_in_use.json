@@ -1,0 +1,40 @@
+{
+  "scenario_title": "delete_rrset of a non-existent type after name_in_use",
+  "test_rationale": "This test creates a name that is unquestionably in use via an A RRset, while the targeted TXT RRset is absent. The single UPDATE issues delete_rrset for the absent TXT type, which is the exact ambiguity in RFC 2136: whether deleting a missing RRset under an existing owner name should succeed silently or fail with an error code. The follow-up A and TXT queries make the post-state observable, letting Ferret distinguish implementations that accept the no-op from those that reject the update.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat delete_rrset of a missing type at an existing owner name as a successful no-op.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host4.campus.edu. retains its A RRset and still has no TXT RRset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the UPDATE because the requested RRset type is absent even though the owner name exists.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "The zone remains unchanged; host4.campus.edu. retains its A RRset and has no TXT RRset."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2.4 defines delete_rrset as removing all RRs of a specified type, but it does not prescribe the outcome when that RRset is already absent at an existing owner name. Section 7.2 discusses data-present/absent conditions but leaves room for either success or failure semantics here, so implementations may differ on whether the UPDATE returns NOERROR or NXRRSET/SERVFAIL and whether they apply the delete as a no-op."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

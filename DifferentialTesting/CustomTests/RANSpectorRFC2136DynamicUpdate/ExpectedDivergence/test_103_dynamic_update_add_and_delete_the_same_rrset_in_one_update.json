@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Add and delete the same RRset in one UPDATE",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "post_state_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Applies the add and then the rrset deletion within the same UPDATE, leaving no A rrset at temp.campus.edu.",
+        "reply_rcode": "NOERROR",
+        "post_state": "NXDOMAIN or NODATA for temp.campus.edu. A"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the UPDATE as effectively preserving the added rrset or otherwise does not nullify it with the later rrset deletion.",
+        "reply_rcode": "NOERROR",
+        "post_state": "temp.campus.edu. has A 192.0.2.10"
+      }
+    },
+    "why_divergence": "RFC 2136 §3 and §3.4.2 define prerequisites and then the update section, but do not specify intra-UPDATE ordering or conflict resolution when an rrset is both added and deleted in the same message. RFC 2181 §5.1 and §5.4 constrain rrset semantics, not the processing order inside one UPDATE, so compliant servers may differ on whether the later delete_rrset cancels the earlier add_rr or whether the add survives.",
+    "test_rationale": "This test sends one syntactically valid UPDATE with no prerequisites: it first adds an A RRset at a previously empty name and then deletes that same name/type rrset in the same packet. Because RFC 2136 does not normatively define whether UPDATE operations are applied as an ordered sequence, atomically, or as a set, implementations can diverge in the final zone state even if they both return NOERROR. The follow-up QUERY on temp.campus.edu. A provides the observable oracle.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

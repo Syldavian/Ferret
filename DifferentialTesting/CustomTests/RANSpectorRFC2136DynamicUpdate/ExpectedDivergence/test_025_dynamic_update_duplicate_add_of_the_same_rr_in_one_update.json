@@ -1,0 +1,47 @@
+{
+  "scenario_title": "Duplicate add of the same RR in one UPDATE",
+  "test_rationale": "This test isolates an underspecified corner of RFC 2136 processing: two identical add_rr records for the same owner, type, class, and RDATA appear in one UPDATE with no prerequisites. Because the protocol defines RRsets as sets but does not prescribe how duplicate additions inside a single UPDATE are handled, implementations may either normalize to one RR, reject the message as conflicting, or otherwise diverge in observable behavior. A follow-up QUERY on the touched name exposes the final RRset state after the single UPDATE.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE and normalizes the duplicate add into a single RR in the RRset.",
+        "reply_rcode": "NOERROR",
+        "post_state": "dup.campus.edu. exists with one A RR 192.0.2.20"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "May treat the duplicate add as redundant or conflicting during UPDATE processing, producing a different reply and/or final RRset handling.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "dup.campus.edu. absent or not stored as a single normalized RRset"
+      },
+      "group_3": {
+        "implementations": [],
+        "behavior": "Alternate implementation-specific handling of duplicate identical additions within one UPDATE.",
+        "reply_rcode": "NOERROR",
+        "post_state": "dup.campus.edu. present with a normalized single-RR A rrset or other normalized equivalent"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 describes the UPDATE section as a sequence of RRs to be added, while RFC 2181 §5.2 treats RRsets as sets, but neither normatively specifies whether identical add_rr entries in the same UPDATE must be deduplicated, merged, or rejected. As a result, servers may differ in both reply code and the resulting RRset cardinality."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Delete a nonexistent RRset after prereq success",
+  "test_rationale": "This test isolates the underspecified case by first satisfying an unrelated prerequisite so the server must process the UPDATE body, then issuing delete_rrset for a TXT RRset that is absent at the target name. The only observable difference expected across implementations is whether the UPDATE replies NOERROR or NXRRSET; a follow-up QUERY confirms the zone state is unchanged either way.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat delete_rrset of an absent RRset as a successful idempotent no-op after prerequisites pass.",
+        "reply_rcode": "NOERROR",
+        "post_state": "absent.campus.edu. TXT remains absent; QUERY returns NXRRSET or no answer."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject delete_rrset of an absent RRset even though the prerequisite succeeded.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "absent.campus.edu. TXT remains absent; QUERY returns NXRRSET or no answer."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 and §3.4.2.4 define delete_rrset as an update operation, but they do not state the required RCODE when the named RRset is already absent and the prerequisite section has passed. RFC 2181 §5 defines RRset semantics, but does not resolve whether this specific delete must be idempotent or an error. Therefore compliant servers may differ only in the UPDATE reply code while leaving the zone unchanged."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

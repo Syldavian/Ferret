@@ -1,0 +1,39 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "idempotent_delete_rr_absent",
+  "Notes": "Prerequisite uses an unrelated existing name so the UPDATE is accepted into the processing path, then attempts to delete an RR that is already absent. Follow-up query checks that the TXT rrset remains absent if the server treats the update as a no-op.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Accept the update via an existing-name prerequisite, then delete an already-absent TXT RR at replay.campus.edu.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "replay.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "replay.campus.edu. 500 IN TXT \"somevalue\""
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "replay.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the TXT rrset is still absent after the delete_rr of already-missing data."
+    }
+  ]
+}

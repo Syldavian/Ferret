@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "ttl_mismatch_rrset_add",
+  "Notes": "Probe how the server handles an UPDATE that adds an A RR to an existing RRset with a different TTL than the preexisting member.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add x.campus.edu. A 192.0.2.41 with TTL 60 to the existing x.campus.edu. A RRset whose current member has TTL 300.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "x.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "x.campus.edu. 60 IN A 192.0.2.41"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "x.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the post-update RRset and answer code."
+    }
+  ]
+}

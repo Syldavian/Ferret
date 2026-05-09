@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Delete an RRset while adding to that same RRset in one UPDATE",
+  "test_rationale": "This scenario isolates the underspecified case where one UPDATE message first removes an RRset and then recreates the same RRset with a different A record. Because RFC 2136 does not say whether the server must process these operations strictly in order, treat them as a composite replace, or reject the combination, implementations can legitimately diverge. The follow-up QUERY on the same name/type makes the difference observable by checking whether y.campus.edu. A exists and, if it does, which address is retained.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Applies the delete_rrset and then the add_rr, resulting in the new A RRset being present after a NOERROR UPDATE.",
+        "reply_rcode": "NOERROR",
+        "post_state": "y.campus.edu. A 192.0.2.41"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the mixed delete/add to the same name/type as a conflicting update and rejects it, or otherwise leaves the RRset absent after processing.",
+        "reply_rcode": "REFUSED",
+        "post_state": "y.campus.edu. A absent"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines delete_rrset and add_rr as individual update actions, but it does not normatively specify how a server must resolve a single UPDATE that contains both a delete_rrset and an add_rr for the same owner name and type. RFC 2181 §5.2 emphasizes RRset atomicity, but it does not prescribe intra-message ordering semantics for contradictory edits. As a result, implementations may differ on whether the operations are applied sequentially, coalesced as a replace, or rejected as a semantic conflict, producing different reply codes and/or post-state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

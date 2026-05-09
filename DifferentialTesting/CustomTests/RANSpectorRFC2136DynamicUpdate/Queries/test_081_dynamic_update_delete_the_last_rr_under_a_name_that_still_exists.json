@@ -1,0 +1,44 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_last_rr_empty_node_boundary",
+  "Notes": "Delete the only RR at lone.campus.edu. and then query the name to distinguish servers that preserve an empty existing node from servers that collapse the name entirely.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the only A RR at lone.campus.edu. with no prerequisites.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "lone.campus.edu. 500 IN A 192.0.2.80"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "lone.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the name remains as an existing empty node or becomes non-existent after deleting the last RR."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "lone.campus.edu.",
+      "Type": "ANY",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Cross-check the post-update node state with a different query type."
+    }
+  ]
+}

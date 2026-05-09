@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Conflicting add and delete of the same RR in one UPDATE",
+  "test_rationale": "This test isolates the underspecified case where a single dynamic update first adds an RR and then deletes that same RR with identical owner, type, class, TTL, and rdata. The zone begins with that RR already present so the prerequisites are satisfied, and the follow-up query can distinguish a server that applies the operations sequentially from one that rejects the conflicting message or otherwise preserves the RR. Because RFC 2136 does not define the semantics of an add/delete cancellation inside one UPDATE, BIND and Knot can legitimately diverge in reply code and/or resulting RRset state.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Processes UPDATE operations in order and treats add then identical delete as net removal.",
+        "reply_rcode": "NOERROR",
+        "post_state": "x.campus.edu. A absent"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the semantically conflicting UPDATE as contradictory, or otherwise does not apply it in the same way.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "x.campus.edu. A present"
+      }
+    },
+    "why_divergence": "RFC 2136 §3 defines UPDATE processing order, but it does not specify what a server must do when one UPDATE message both adds and deletes the identical RR. RFC 2181 constrains RRset semantics, yet leaves conflict resolution for such intra-message add/delete pairs unspecified, so implementations may differ on whether the result is no-op, sequential removal, or rejection."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

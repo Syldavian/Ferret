@@ -1,0 +1,38 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "duplicate_add_rr",
+  "Notes": "Single UPDATE carries two identical add_rr operations for the same owner/type/class/TTL/rdata. The zone pre-seeds the target RR so implementations that treat the second add as YXRRSET-like or otherwise reject duplicate insertions can diverge from implementations that coalesce duplicates and return NOERROR. The follow-up QUERY observes whether the RRset is present unchanged.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Issue one UPDATE with two identical add_rr operations for dup.campus.edu. A 198.51.100.7 and no prerequisites.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "dup.campus.edu. 500 IN A 198.51.100.7"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "dup.campus.edu. 500 IN A 198.51.100.7"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "dup.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the post-state of the touched RRset."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Duplicate add_rr for the same RR in one UPDATE",
+  "test_rationale": "This test isolates an underspecified corner of RFC 2136 update processing: the UPDATE section contains two syntactically identical add_rr operations for the same owner, type, class, TTL, and RDATA. Some servers may collapse the duplicate and commit the change once, returning NOERROR; others may treat the repeated addition as an error and reject the transaction. Querying the touched name after the UPDATE makes the resulting RRset state directly observable and provides a binary oracle across BIND and Knot.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE with NOERROR and creates a single A RRset member for host2.campus.edu. despite the duplicate add_rr entries.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host2.campus.edu. has one A RR in the rrset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE as an error when the same add_rr appears twice, or otherwise handles the duplicate differently so the transaction does not commit.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "host2.campus.edu. remains absent."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4 defines add semantics for an individual RR but does not specify how a server must process two identical add_rr entries within the same UPDATE message. RFC 2181 §5.2 defines RRset equality and identity at the data model level, but not update-time duplicate elision or error handling. As a result, implementations can plausibly diverge in both the UPDATE reply and the resulting zone state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

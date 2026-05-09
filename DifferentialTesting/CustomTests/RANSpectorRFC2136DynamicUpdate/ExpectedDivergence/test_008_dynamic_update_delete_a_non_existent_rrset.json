@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Delete a non-existent RRset",
+  "test_rationale": "This test issues one wire-valid UPDATE containing only delete_rrset for a TXT RRset that is known to be absent, with no prerequisites to constrain the semantics. That isolates the underspecified choice point in RFC 2136: whether the server should silently accept the idempotent delete or reject it with an error such as NXRRSET or SERVFAIL. The follow-up QUERY confirms the post-state is unchanged, making the divergence observable primarily in the UPDATE reply.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats unconditional delete_rrset of a missing RRset as a successful no-op",
+        "reply_rcode": "NOERROR",
+        "post_state": "absentset.campus.edu. has no TXT RRset"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Signals failure for deleting a non-existent RRset",
+        "reply_rcode": "NXRRSET",
+        "post_state": "absentset.campus.edu. has no TXT RRset"
+      }
+    },
+    "why_divergence": "RFC 2136 §3 defines delete_rrset as a valid UPDATE operation, while §7.2 explains that existence/absence conditions are normally expressed with prerequisites, but it does not mandate a single RCODE or a required no-op semantics for an unconditional delete_rrset against an absent RRset. As a result, implementations may differ in reply handling even though zone state remains unchanged."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

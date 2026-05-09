@@ -1,0 +1,42 @@
+{
+  "scenario_title": "delete_rr of an absent RR after a passing prerequisite",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats the delete_rr for an absent RR as a benign no-op once prerequisites have passed, and completes the UPDATE successfully.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host2.campus.edu. remains absent; host1.campus.edu. A remains present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE or aborts it when asked to delete a specific RR that is not present, despite the prerequisite succeeding.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "host2.campus.edu. remains absent; host1.campus.edu. A remains present."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4 describes delete_rr syntax and semantics, but does not clearly specify whether deleting a nonexistent RR after all prerequisites succeed must be treated as a harmless no-op or as an error that aborts the UPDATE. Section 7.2 discusses prerequisite failure handling, but leaves this update-side absence case underspecified, so implementations may diverge on both the reply code and whether the transaction is considered successful.",
+    "test_rationale": "The zone contains one existing helper RRset so the prerequisite can succeed, while the UPDATE targets a different name whose specific A RR is absent. This isolates the underspecified behavior of delete_rr on a missing RR from prerequisite handling. The follow-up queries make it possible to distinguish a server that silently accepts the UPDATE from one that rejects or aborts it.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

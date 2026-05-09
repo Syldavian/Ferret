@@ -1,0 +1,49 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_owner_add_rr_after_name_in_use",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Prerequisite checks only that k.campus.edu. is in use, then attempt to add an A RR at the CNAME owner.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "k.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "k.campus.edu. 500 IN A 192.0.2.90"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "k.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RR was added, rejected, or normalized away."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "k.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the original CNAME remains alone or becomes mixed with other data."
+    }
+  ]
+}

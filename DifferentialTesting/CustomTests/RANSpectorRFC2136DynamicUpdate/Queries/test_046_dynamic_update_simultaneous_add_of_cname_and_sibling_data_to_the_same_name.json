@@ -1,0 +1,53 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_sibling_conflict",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Single UPDATE attempts to create a CNAME and a sibling A RR at the same owner name in one message.",
+      "Prerequisites": [
+        {
+          "Kind": "name_absent",
+          "Name": "mix.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "mix.campus.edu. 500 IN CNAME target.campus.edu."
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "mix.campus.edu. 500 IN A 192.0.2.80"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "mix.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the CNAME was installed or rejected."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "mix.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the sibling A was installed or rejected."
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "scenario_title": "Delete the apex name and preserve zone viability",
+  "test_rationale": "This test uses the smallest meaningful zone apex setup: the required SOA and NS plus one extra apex TXT rrset. A single delete_name at the zone origin exercises the RFC 2136 ambiguity directly. Some servers may refuse the update to protect zone viability, while others may accept it and either preserve only mandatory apex data or remove the apex more literally. Querying apex SOA and NS after the UPDATE gives a binary oracle over both reply handling and post-state.",
+  "involved_rfcs": [
+    "2136",
+    "1034",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the apex delete_name update as semantically unsafe for a zone apex, or otherwise preserve the apex rrsets needed for zone viability.",
+        "reply_rcode": "REFUSED",
+        "post_state": "SOA and NS remain present at campus.edu.; optional TXT may also remain if the update was rejected."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept the update and remove the apex name's non-mandatory rrsets, potentially leaving only the mandatory SOA/NS or an otherwise altered apex state.",
+        "reply_rcode": "NOERROR",
+        "post_state": "Apex TXT is gone; SOA and NS may remain if protected, or the apex may become unusable depending on implementation choice."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines delete_name as removing all RRs at a name, but it does not special-case the zone apex. RFC 1034 §4.2.1 and RFC 2181 §6 imply that SOA/NS at the apex are structurally necessary, yet they do not specify whether a dynamic-update server must refuse an apex delete_name, partially protect mandatory rrsets, or execute the deletion literally. This makes both the UPDATE reply and the follow-up apex SOA/NS state observable points of implementation divergence."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

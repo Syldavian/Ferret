@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "name_absent_delete_rrset_absent_type",
+  "Notes": "The initial zone contains l.campus.edu. only as a helper RRset; the UPDATE first asserts name_absent for l.campus.edu., then attempts delete_rrset of A at that now-absent name. BIND and Knot may diverge on whether this is a harmless no-op or an update semantic error.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Assert that l.campus.edu. is absent, then delete the A rrset at that name.",
+      "Prerequisites": [
+        {
+          "Kind": "name_absent",
+          "Name": "l.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "l.campus.edu.",
+          "Type": "A"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "l.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A rrset remains absent and whether the name is still absent."
+    }
+  ]
+}

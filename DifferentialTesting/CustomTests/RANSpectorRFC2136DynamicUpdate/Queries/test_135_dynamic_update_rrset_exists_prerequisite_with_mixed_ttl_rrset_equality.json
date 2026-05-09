@@ -1,0 +1,54 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "rrset_equals_mixed_ttl",
+  "Notes": "Initial zone intentionally contains a malformed RRset at www.campus.edu. with identical owner/type/rdata but differing TTLs. The UPDATE tests rrset_equals against that RRset and, if accepted, adds a harmless A record at a separate name to create a visible post-state difference.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Prerequisite rrset_equals against the mixed-TTL A RRset at www.campus.edu.; if satisfied, add a harmless RR at probe.campus.edu.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "www.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "www.campus.edu. 100 IN A 198.51.100.7",
+            "www.campus.edu. 200 IN A 198.51.100.7"
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "probe.campus.edu. 500 IN A 198.51.100.9"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "probe.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the post-update add_rr executed."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "www.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Read back the prerequisite RRset for a vacuous but consistent witness of the initial malformed state."
+    }
+  ]
+}

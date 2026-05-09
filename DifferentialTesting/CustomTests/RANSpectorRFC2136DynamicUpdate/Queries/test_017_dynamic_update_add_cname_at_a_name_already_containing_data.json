@@ -1,0 +1,50 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_coexistence_conflict",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to add a CNAME at mix.campus.edu., where an A RRset already exists, without deleting the existing data.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "mix.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "mix.campus.edu. 500 IN CNAME target.campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "mix.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the CNAME RRset was created or the update was rejected/auto-repaired."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "mix.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the pre-existing A RRset remains after the update attempt."
+    }
+  ]
+}

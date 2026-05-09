@@ -1,0 +1,42 @@
+{
+  "scenario_title": "Add CNAME at a name already containing data",
+  "test_rationale": "This scenario creates the classic CNAME-exclusivity conflict by issuing a single dynamic update that adds a CNAME at mix.campus.edu. while an A RRset already exists there, with no deletion or prerequisite that would normalize the owner name first. Because RFC 2136 does not mandate a unique failure mode for this conflict, implementations may differ in the UPDATE RCODE they return and in whether they preserve or alter the pre-existing data. The follow-up queries for CNAME and A make the resulting state directly observable.",
+  "involved_rfcs": [
+    "4035",
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the UPDATE because the owner name already has non-CNAME data, preserving the existing A RRset.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "q1 returns no CNAME RRset; q2 returns the original A RRset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the UPDATE with a server error or otherwise decline to create the conflicting CNAME; existing data remains unchanged.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "q1 returns no CNAME RRset; q2 returns the original A RRset."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines the mechanics of UPDATE operations, but it does not spell out a mandatory recovery policy for adding a CNAME where other data already exists at the owner name. RFC 2181 §10.1 and RFC 4035 §2.5 state the coexistence is invalid, yet the protocol leaves room for servers to fail with different RCODES or to repair the conflict differently, producing observable differences in the UPDATE reply and/or the resulting RRsets."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

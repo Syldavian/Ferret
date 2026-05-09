@@ -1,0 +1,40 @@
+{
+  "scenario_title": "add_rr followed by delete_rr of the same RR in one UPDATE",
+  "test_rationale": "This test isolates the underspecified intra-message ordering question by using a single UPDATE that first adds an RR and then deletes that identical RR. Because the RRset is already present in the initial zone, a server that applies operations sequentially against interim state may return NOERROR and leave the zone unchanged, while a server that evaluates the delete against the pre-update snapshot may abort with NXRRSET or otherwise reject the message. The follow-up QUERY on the touched name makes any surviving RRset visible and keeps the scenario Ferret-testable for both BIND and Knot.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Processes the add then the delete against the interim updated state, resulting in a no-op UPDATE and a clean NOERROR reply; follow-up QUERY still shows the RRset present because the initial seed RR remains unless the implementation treats the operation as operating only on the added RR instance.",
+        "reply_rcode": "NOERROR",
+        "post_state": "RRset persists with temp.campus.edu. 500 IN A 198.51.100.77"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Evaluates the delete against pre-update state or otherwise rejects the intra-message dependency, aborting the UPDATE with NXRRSET; follow-up QUERY shows the original RRset unchanged.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "RRset persists with temp.campus.edu. 500 IN A 198.51.100.77"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.3 and §3.4.4 define add and delete semantics independently but do not specify whether later operations in the same UPDATE must see an interim state created by earlier operations. As a result, an add_rr followed by delete_rr of the same RR can be treated as a no-op, or the delete can be evaluated against the pre-update state and fail with NXRRSET, producing observable reply and/or state differences."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

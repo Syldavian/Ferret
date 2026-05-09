@@ -1,0 +1,43 @@
+{
+  "scenario_title": "delete_rr for absent exact RR with name present",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat the absent exact RR deletion as a benign no-op and accept the UPDATE.",
+        "reply_rcode": "NOERROR",
+        "post_state": "j.campus.edu. still has A 192.0.2.80"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treat the absent exact RR deletion as a semantic failure and reject the UPDATE.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "j.campus.edu. still has A 192.0.2.80"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2.2 defines the delete_rr wire form and says update RRs delete RRs from the zone, but it does not specify the required result when the targeted exact RR is absent while the owner name exists. RFC 2181 §5 clarifies RRSet semantics and duplicate handling, but it does not resolve whether an absent exact RR should be ignored or cause an error. Implementations can therefore diverge on the UPDATE RCODE even though the resulting zone contents remain the same.",
+    "test_rationale": "This scenario creates the smallest state needed to expose the ambiguity: a zone with a single A RR at j.campus.edu., followed by an UPDATE that requests deletion of a different A RR at the same owner name. Because the owner name exists, prerequisites are satisfied, and the only question is how the server interprets deletion of an absent exact RR. The follow-up query confirms the post-state and makes the test executable even if both implementations leave the RRset unchanged.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

@@ -1,0 +1,43 @@
+{
+  "scenario_title": "TTL mismatch on duplicate-add into an existing RRset",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the duplicate-add as syntactically valid, returns NOERROR, and preserves the existing RRset TTL or otherwise normalizes to a single TTL value.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host1.campus.edu. remains an A RRset with 192.0.2.10; returned TTL is 300 or implementation-normalized."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the TTL disagreement as conflicting update content and rejects the UPDATE, or applies a different TTL reconciliation policy.",
+        "reply_rcode": "REFUSED",
+        "post_state": "host1.campus.edu. remains an A RRset with 192.0.2.10; the visible TTL/reply outcome differs from group_1."
+      }
+    },
+    "why_divergence": "RFC 2136 defines the UPDATE wire format and RR addition semantics, while RFC 2181 §5.2 and §5.4 require RRsets to have a single TTL, but neither RFC specifies how an UPDATE processor must reconcile a new RR whose owner/type/class/RDATA match an existing RRset while the TTL differs. As a result, implementations may accept and normalize the TTL, reject the update, or otherwise produce different reply and post-update behaviors.",
+    "test_rationale": "This test isolates the underspecified case of a duplicate add into an existing RRset where only TTL differs. The initial zone contains host1.campus.edu. A 192.0.2.10 at TTL 300, and the single UPDATE adds the same A record at TTL 60. Because RFC 2136 and RFC 2181 do not say whether the TTL should be preserved, replaced, or treated as an error, different servers can diverge either in the UPDATE RCODE or in the resulting RRset TTL observable by QUERY.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

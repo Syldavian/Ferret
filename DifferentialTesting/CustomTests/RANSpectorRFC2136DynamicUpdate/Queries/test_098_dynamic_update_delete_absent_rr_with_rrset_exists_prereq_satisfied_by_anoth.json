@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_absent_rr_with_rrset_exists",
+  "Notes": "Prerequisite proves the A rrset exists at multi.campus.edu. while the UPDATE attempts to delete a specific A RR that is not present.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Require the A rrset at multi.campus.edu. to exist, then delete a non-member A RR from that rrset.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "multi.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "multi.campus.edu. 500 IN A 192.0.2.99"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "multi.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A rrset remains unchanged after the UPDATE."
+    }
+  ]
+}

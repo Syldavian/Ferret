@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add an RRset member with TTL differing from existing members",
+  "test_rationale": "The test starts with a single A RR at x.campus.edu. with TTL 300, then performs one UPDATE that adds another A RR for the same owner name but with TTL 60. This directly exercises the underspecified interaction between dynamic update processing and RRset TTL consistency rules from RFC 2181. A server may rewrite or normalize the TTL and accept the update, or it may reject the update as malformed or otherwise unprocessable, producing a different reply and, in the reject case, a different post-update RRset. A follow-up QUERY makes both reply handling and final zone state observable.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accept the UPDATE and make the RRset available, typically normalizing storage/rewriting so the resulting RRset is internally consistent.",
+        "reply_rcode": "NOERROR",
+        "post_state": "QUERY returns x.campus.edu. A with both 192.0.2.40 and 192.0.2.41; TTL observed for the RRset may be normalized rather than preserving mixed input TTLs."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the UPDATE because the added RR's TTL does not match the existing RRset TTL, or fail processing with a server error.",
+        "reply_rcode": "FORMERR",
+        "post_state": "QUERY still returns only the original x.campus.edu. A 192.0.2.40 RR."
+      }
+    },
+    "why_divergence": "RFC 2181 §5.2 requires RRset TTL consistency, but RFC 2136 does not define whether an UPDATE that adds an RR with a different TTL must be normalized, rejected, or accepted with temporary heterogeneity. That leaves the enforcement point and failure mode undefined, so implementations may diverge in UPDATE reply code and in the resulting RRset visible to a subsequent QUERY."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

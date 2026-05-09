@@ -1,0 +1,41 @@
+{
+  "scenario_title": "delete_name at the zone apex",
+  "test_rationale": "This test isolates the underspecified case of delete_name applied to the zone apex of a minimal authoritative zone. Because the apex must retain SOA and NS per RFC 2181, implementations must choose between rejecting the UPDATE or applying it in a constrained way that preserves mandatory data. Querying SOA and NS after the UPDATE turns that choice into an executable oracle for reply and/or post-state divergence between BIND and Knot.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects delete_name at the apex because the origin must retain mandatory SOA/NS, leaving the zone unchanged.",
+        "reply_rcode": "REFUSED",
+        "post_state": "campus.edu. still has SOA and NS rrsets."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accepts the UPDATE but preserves mandatory apex data, or otherwise handles the apex delete differently from BIND.",
+        "reply_rcode": "NOERROR",
+        "post_state": "campus.edu. SOA and NS remain present."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines delete_name, but it does not specify the required behavior when the target is the zone apex. RFC 2181 §6.1 requires SOA and NS at the zone origin, creating an unresolved choice between refusing the UPDATE and accepting it while preserving mandatory apex records."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

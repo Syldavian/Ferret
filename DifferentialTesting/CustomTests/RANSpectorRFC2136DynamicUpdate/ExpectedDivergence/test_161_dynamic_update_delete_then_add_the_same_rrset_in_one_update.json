@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Delete then add the same RRset in one UPDATE",
+  "test_rationale": "This test creates one RRset, then issues a single UPDATE that deletes that RRset and immediately adds a new TXT RRset at the same owner name. That shape directly exercises the RFC 2136 gap around conflicting operations in one message: a server may execute the operations in order and end with the new TXT record, or it may reject the message or preserve the original state. The follow-up QUERY makes the final zone content observable so the runner can distinguish sequential processing from rejection or normalization behavior.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Processes the UPDATE sequentially, so the delete_rrset removes the old TXT RRset and the subsequent add_rr installs the new TXT RRset.",
+        "reply_rcode": "NOERROR",
+        "post_state": "hold.campus.edu. TXT contains only \"new\"."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects or otherwise does not apply the conflicting same-message delete-then-add sequence as a valid sequential update.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "hold.campus.edu. TXT remains \"old\" or the RRset is unchanged."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 and §3.4.3 define delete and add semantics individually, but do not specify a canonical intra-message ordering or conflict-resolution rule when both operations target the same owner/type within one UPDATE. Implementations may therefore apply the operations sequentially, normalize them as a net delta, or reject the message, producing observable differences in reply code and/or final RRset contents."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

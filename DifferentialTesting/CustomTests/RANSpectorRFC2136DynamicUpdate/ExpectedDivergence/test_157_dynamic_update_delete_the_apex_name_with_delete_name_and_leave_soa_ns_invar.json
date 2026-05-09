@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Delete the apex name with delete_name and leave SOA/NS invariants undefined",
+  "test_rationale": "This scenario isolates the underspecified behavior of delete_name applied directly to the authoritative apex of a minimal zone. Because the apex necessarily owns the SOA and NS rrsets, a compliant implementation must choose among rejection, invariant-preserving handling, or permissive deletion semantics that may leave the served zone in an inconsistent state. Querying the apex SOA and NS after the UPDATE makes the divergence observable across implementations.",
+  "involved_rfcs": [
+    "2136",
+    "1035"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects the apex delete_name UPDATE or otherwise preserves the zone apex invariants.",
+        "reply_rcode": "REFUSED",
+        "post_state": "campus.edu. still answers with SOA and NS rrsets."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accepts the UPDATE or processes it differently, potentially removing apex data or exposing a divergent served state.",
+        "reply_rcode": "NOERROR",
+        "post_state": "campus.edu. SOA and/or NS differ from the baseline, possibly absent or inconsistent."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.3 defines delete_name but does not specify special handling for the zone apex, while RFC 1035 §4.1.3 requires SOA at the apex and NS to identify the zone. As a result, servers may refuse the UPDATE, preserve the mandatory apex rrsets, or apply the deletion in different ways, yielding observable differences in both UPDATE reply and follow-up QUERY answers."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

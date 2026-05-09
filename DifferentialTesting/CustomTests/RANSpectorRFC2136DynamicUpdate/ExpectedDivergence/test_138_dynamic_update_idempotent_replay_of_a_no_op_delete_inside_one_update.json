@@ -1,0 +1,40 @@
+{
+  "scenario_title": "idempotent replay of a no-op delete inside one UPDATE",
+  "test_rationale": "This test isolates the underspecified case where a delete_rr targets an RR that is definitely absent, while the UPDATE also contains a satisfied prerequisite and an unrelated add/delete pair. That shape lets servers either ignore the missing delete and return success or abort the message as NXRRSET-like failure. The follow-up QUERY on probe.campus.edu. provides a consistent post-state check, even if both implementations leave the zone unchanged, while the key divergence remains the UPDATE reply code.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat the absent delete_rr as a semantic no-op and apply the rest of the UPDATE.",
+        "reply_rcode": "NOERROR",
+        "post_state": "probe.campus.edu. remains absent; the add/delete pair is committed and leaves no visible TXT rrset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treat the absent delete_rr as an error condition and reject the UPDATE.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "probe.campus.edu. remains absent; no changes are committed."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.4 specifies delete_rr behavior when the target RR is present, but does not clearly define whether deleting an already-absent RR must be a benign no-op or an UPDATE-failing semantic error. With a satisfied prerequisite and unrelated operations in the same message, implementations may differ on whether to commit the message and what RCODE to return."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

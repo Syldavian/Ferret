@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Idempotent replay of a non-destructive UPDATE",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats the replayed no-op UPDATE as successful because all prerequisites hold and the applied changes do not alter zone content.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host1.campus.edu. remains an A RRset containing 198.51.100.10"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the replayed already-converged UPDATE as semantically inapplicable and returns an error even though the zone content is unchanged.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "host1.campus.edu. remains an A RRset containing 198.51.100.10"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 and §3.4.2.4 specify prerequisite checking and per-RR update processing, but do not require that a semantically no-op UPDATE over an unchanged zone must return NOERROR on replay. RFC 2181 §5.4.1 does not resolve this either, so implementations may disagree on whether the processor should report success or a semantic failure when the requested end state already holds.",
+    "test_rationale": "This test uses one UPDATE that is deliberately non-destructive: it adds an RR that already exists and deletes an unrelated absent RRset, while prerequisites ensure the zone starts in the required state. Because the final zone contents should remain unchanged regardless of processor choice, the only observable difference is the UPDATE reply code. The follow-up QUERY on the touched RRset provides a consistent post-state witness for the runner.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

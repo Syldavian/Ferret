@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Duplicate add_rr members with conflicting TTLs",
+  "test_rationale": "This test isolates the underspecified case where a single UPDATE contains two identical A RRs for z.campus.edu. with different TTLs. A compliant server may canonicalize to one TTL and accept the update, or may reject the transaction to avoid creating a non-uniform RRset. The follow-up QUERY makes the post-state observable even if the reply is NOERROR, yielding a binary oracle across implementations.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE and suppresses the duplicate, keeping one TTL choice for the resulting RRset (e.g. first-seen or normalized).",
+        "reply_rcode": "NOERROR",
+        "post_state": "z.campus.edu. has one A RRset containing 192.0.2.40 with a uniform TTL chosen by the implementation."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE because the two adds create a conflicting RRset TTL situation within one transaction.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "z.campus.edu. remains absent."
+      }
+    },
+    "why_divergence": "RFC 2136 §2 defines update processing but gives no rule for ordering or conflict resolution between two add_rr operations that create the same owner/type/rdata with different TTLs in one UPDATE. RFC 2181 §5.2 requires uniform TTLs within an RRset and says duplicates should be suppressed, but it does not specify which TTL must win or whether the UPDATE must be rejected when the conflict is introduced internally by the update transaction."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

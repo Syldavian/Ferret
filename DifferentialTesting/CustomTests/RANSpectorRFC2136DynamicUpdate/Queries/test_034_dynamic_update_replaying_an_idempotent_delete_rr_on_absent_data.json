@@ -1,0 +1,39 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "idempotent_delete_rr_replay",
+  "Notes": "Replay a syntactically valid delete_rr for an RR that is already absent. The name exists so the UPDATE is anchored in-zone, but the target TXT RR is not present in the starting state.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to delete an absent TXT RR at an existing in-zone name. The update is prerequisite-safe because the name is in use, but the specific RR does not exist.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "retry.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "retry.campus.edu. 500 IN TXT \"absent\""
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "retry.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe that the TXT RRset remains absent after the UPDATE, regardless of reply code."
+    }
+  ]
+}

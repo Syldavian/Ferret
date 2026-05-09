@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add RR at a name that already owns a CNAME",
+  "test_rationale": "This test sets up a name that already owns only a CNAME, satisfies the prerequisite with name_in_use, then attempts a single A add at the same owner. That directly exercises the underspecified boundary between valid UPDATE syntax and zone-integrity enforcement under RFC 2181. The follow-up CNAME and A queries provide a binary oracle over both the reply and the resulting zone state.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects the UPDATE when the add_rr would create a CNAME-plus-other-data conflict at the owner, preserving the original CNAME-only state.",
+        "reply_rcode": "REFUSED",
+        "post_state": "alias.campus.edu. answers only with the original CNAME rrset; no A rrset is present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE with a different failure mode for the same semantic conflict, while still preserving the original CNAME-only state.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "alias.campus.edu. answers only with the original CNAME rrset; no A rrset is present."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 forbids CNAME coexisting with other data at the same owner, but RFC 2136 §3.4 and §3.4.2.2 do not specify the required UPDATE-side error code or rollback behavior when prerequisites pass and an add_rr would violate that invariant against current zone state. Implementations may therefore differ on the UPDATE reply RCODE while keeping the post-update state consistent."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

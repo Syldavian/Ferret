@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Delete absent RR with satisfied prerequisite",
+  "test_rationale": "This scenario isolates the underspecified corner case by first ensuring the target name and A RRset exist, so the prerequisite passes cleanly, and then issuing a delete_rr for an A record that is not present in that RRset. The post-state is expected to remain unchanged either way, so the only reliable oracle is the UPDATE reply code, which is where BIND and Knot may differ on whether absent-member deletion is a no-op or an error.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats delete_rr of an absent RR as a no-op and accepts the UPDATE.",
+        "reply_rcode": "NOERROR",
+        "post_state": "absentrr.campus.edu. still has A 192.0.2.51"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE when the target RR is not present, despite the prerequisite being satisfied.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "absentrr.campus.edu. still has A 192.0.2.51"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.2 and §3.4.2 define prerequisite evaluation and the delete_rr syntax, but do not explicitly specify the outcome when an UPDATE requests deletion of a single RR that is absent while the relevant RRset exists. That leaves room for implementations to either succeed idempotently or fail the transaction, producing wire-visible RCODE divergence."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

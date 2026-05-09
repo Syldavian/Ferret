@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Same-name add and delete RRset in one UPDATE",
+  "test_rationale": "This test targets the RFC 2136 underspecification around intra-message ordering and self-conflicting UPDATE content. The zone starts with a live A RRset at host1.campus.edu., then a single UPDATE adds another A RR and deletes the entire same RRset. A strictly sequential implementation will end with no RRset, while an implementation that normalizes or rejects the contradiction may produce a different RCODE and/or retain the RRset. The post-UPDATE query makes the outcome observable and binary.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Processes the UPDATE sequentially, applying the add and then the delete_rrset, so the final A RRset is absent; reply is NOERROR.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host1.campus.edu. A rrset absent"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the self-contradictory same-name add-plus-delete_rrset UPDATE as invalid or normalizes it differently, resulting in a different reply and/or retained RRset.",
+        "reply_rcode": "REFUSED",
+        "post_state": "host1.campus.edu. A rrset exists or differs from the BIND outcome"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 says update RRs are processed in order and defines add/delete primitives, but it does not specify conflict resolution when a single UPDATE both adds an RR to an RRset and deletes that same RRset. The standard leaves open whether the server must strictly apply operations sequentially, coalesce them, or reject the message as contradictory, so both reply and post-state differences are plausible."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

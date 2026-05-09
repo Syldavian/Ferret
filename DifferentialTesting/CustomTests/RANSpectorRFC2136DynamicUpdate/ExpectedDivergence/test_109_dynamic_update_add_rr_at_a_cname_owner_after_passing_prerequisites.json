@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add RR at a CNAME owner after passing prerequisites",
+  "test_rationale": "This test first establishes that alias1.campus.edu. exists, then performs a single dynamic UPDATE that adds an A RR to that same owner even though the initial zone already contains a CNAME there. The prerequisites are intentionally satisfied so the only question is how the UPDATE engine applies the CNAME exclusivity rule. Different implementations may either reject the change with a YXRRSET-like error or accept it and alter the resulting rrset composition, making the difference visible in both the reply and follow-up queries.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the UPDATE because the owner already has a CNAME, preserving the original alias-only state.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "alias1.campus.edu. retains CNAME target.campus.edu.; no A RR appears."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept the UPDATE and materialize the A RR at the owner, resulting in a different post-update state than a strict CNAME-only interpretation.",
+        "reply_rcode": "NOERROR",
+        "post_state": "alias1.campus.edu. has an A RR present; the CNAME may be removed or may coexist depending on canonicalization behavior."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 makes CNAME exclusivity a data-model rule, but RFC 2136 §3.4.2 does not prescribe a mandatory UPDATE RCODE or transaction policy for adding a non-CNAME RR to an owner that already has a CNAME. That leaves room for different servers to reject, overwrite, or transiently coexist, producing divergence in both the UPDATE reply and the observed post-state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

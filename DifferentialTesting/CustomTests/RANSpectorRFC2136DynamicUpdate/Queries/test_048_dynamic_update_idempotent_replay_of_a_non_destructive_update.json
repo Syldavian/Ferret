@@ -1,0 +1,50 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "idempotent_replay",
+  "Notes": "Single UPDATE is intentionally non-destructive: it re-adds an already-present RR and deletes an unrelated absent RRset. The zone is initially in the post-state already, so the UPDATE may be treated as a no-op success or as a semantic failure on replay/unchanged state. A follow-up QUERY checks that the witness RRset remains unchanged.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Replay a non-destructive UPDATE against an already-converged zone: add an already-present RR and delete an absent unrelated RRset, with prerequisites that hold in the initial state.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "host1.campus.edu.",
+          "Type": "A"
+        },
+        {
+          "Kind": "rrset_absent",
+          "Name": "ghost.campus.edu.",
+          "Type": "TXT"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "host1.campus.edu. 500 IN A 198.51.100.10"
+        },
+        {
+          "Kind": "delete_rrset",
+          "Name": "ghost.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host1.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the witness RRset remains unchanged after the UPDATE."
+    }
+  ]
+}

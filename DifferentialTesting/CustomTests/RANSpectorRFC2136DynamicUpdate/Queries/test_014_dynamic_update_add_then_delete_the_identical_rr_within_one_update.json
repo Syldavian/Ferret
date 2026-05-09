@@ -1,0 +1,37 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "add_delete_same_rr_single_update",
+  "Notes": "Single UPDATE adds an RR and then deletes that exact same RR in the same message, probing whether the server canonicalizes the pair away, applies operations sequentially, or rejects the message.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add host.campus.edu. TXT \"x\" and then delete that exact same RR within one UPDATE.",
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "host.campus.edu. 500 IN TXT \"x\""
+        },
+        {
+          "Kind": "delete_rr",
+          "Rr": "host.campus.edu. 500 IN TXT \"x\""
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the TXT RRset is present after the UPDATE."
+    }
+  ]
+}

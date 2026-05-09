@@ -1,0 +1,44 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "apex_delete_name_mandatory_rrs",
+  "Notes": "Single UPDATE attempts to delete the zone apex name, which would remove mandatory SOA/NS content if honored literally. Follow-up queries observe whether the apex remains coherent and which RCODE the server chose.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to delete the apex name campus.edu. with no prerequisites, which would syntactically target the mandatory SOA/NS owner name.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "delete_name",
+          "Name": "campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "SOA",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the apex SOA remains present after the delete_name UPDATE."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "NS",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the apex NS remains present after the delete_name UPDATE."
+    }
+  ]
+}

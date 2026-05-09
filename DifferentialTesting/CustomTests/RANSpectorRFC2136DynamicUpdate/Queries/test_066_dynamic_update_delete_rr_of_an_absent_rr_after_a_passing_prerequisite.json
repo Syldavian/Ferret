@@ -1,0 +1,50 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "absent_delete_rr_after_passing_prereq",
+  "Notes": "Pass a prerequisite on an existing helper RRset, then request deletion of a specific RR that is not present in the target RRset. The follow-up query checks whether the server silently no-ops or reflects an error/abort behavior.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Prerequisite passes on host1.campus.edu. A, then delete an absent A RR at host2.campus.edu.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "host1.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "host2.campus.edu. 500 IN A 192.0.2.55"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host2.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether host2 was created, left absent, or otherwise affected by the UPDATE."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "host1.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Confirm the prerequisite helper RRset remains present."
+    }
+  ]
+}

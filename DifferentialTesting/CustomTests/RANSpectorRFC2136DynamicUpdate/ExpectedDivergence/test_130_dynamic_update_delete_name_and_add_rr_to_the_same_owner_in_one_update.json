@@ -1,0 +1,40 @@
+{
+  "scenario_title": "delete_name and add_rr to the same owner in one UPDATE",
+  "test_rationale": "This test sets up an existing helper owner name and then issues one UPDATE that deletes the entire name before adding a new RR at the same owner. Because RFC 2136 does not define whether delete_name is a barrier within the same UPDATE or whether later additions see the original zone snapshot, implementations can disagree on whether the owner is recreated, whether the UPDATE is accepted, and what the follow-up QUERY returns. Querying both the specific A RRset and ANY makes the outcome machine-observable.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats delete_name as affecting the original zone snapshot, so the later add_rr recreates the owner and the UPDATE succeeds.",
+        "reply_rcode": "NOERROR",
+        "post_state": "sweep.campus.edu. exists with A 198.51.100.77; q1 returns that RRset and q2 shows the name present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats delete_name as a barrier or evaluates the UPDATE so that the later add_rr does not recreate the name in the same message, leading to a different acceptance decision or a different final zone state.",
+        "reply_rcode": "NXDOMAIN",
+        "post_state": "sweep.campus.edu. is absent after the UPDATE or does not contain the added A RR; q1 and q2 indicate the name was not recreated."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.4 defines delete_name as deleting all RRsets at the named domain name, and §3.4.3 defines add_rr, but RFC 2136 does not specify whether UPDATE operations are applied strictly in order or against a snapshot of the pre-update zone. That leaves undefined whether a later add_rr can recreate a name that was deleted earlier in the same UPDATE, producing divergent reply codes and post-state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

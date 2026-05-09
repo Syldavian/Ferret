@@ -1,0 +1,47 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "within_message_ordering_conflict",
+  "Notes": "Single UPDATE contains an add_rr and delete_rr for the same owner/type/RDATA. The test checks whether the server preserves message order, canonicalizes conflicting operations, or rejects the UPDATE. Post-state is observed by querying the owner after the UPDATE.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add ord.campus.edu. TXT \"x\" and then delete the same RR later in the same UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "ord.campus.edu.",
+          "Type": "TXT",
+          "Rrs": [
+            "ord.campus.edu. 500 IN TXT \"base\""
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "ord.campus.edu. 500 IN TXT \"x\""
+        },
+        {
+          "Kind": "delete_rr",
+          "Rr": "ord.campus.edu. 500 IN TXT \"x\""
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "ord.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the TXT \"x\" remains present after the single UPDATE."
+    }
+  ]
+}

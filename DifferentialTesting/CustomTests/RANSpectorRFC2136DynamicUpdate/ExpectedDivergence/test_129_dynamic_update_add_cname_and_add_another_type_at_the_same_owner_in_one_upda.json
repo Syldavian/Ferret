@@ -1,0 +1,41 @@
+{
+  "scenario_title": "add CNAME and add another type at the same owner in one UPDATE",
+  "test_rationale": "The zone starts with a harmless A RR at cname1.campus.edu. so the UPDATE can meaningfully request a CNAME plus another RR at the same owner in one message. This directly exercises the protocol gap around exclusivity enforcement and error mapping for a single UPDATE that violates RFC 2181's CNAME rule. The follow-up queries on CNAME, TXT, and A make the resulting owner state observable regardless of whether the server rejects the update outright or partially applies one of the additions.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects the UPDATE or applies it in a way that leaves only the original A RRset and no CNAME/TXT at the owner.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "cname1.campus.edu. remains with A only; CNAME and TXT are absent."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accepts the UPDATE and normalizes or partially applies it so that the owner ends up with one of the requested additions surviving.",
+        "reply_rcode": "NOERROR",
+        "post_state": "cname1.campus.edu. shows either CNAME or TXT, or a different exclusivity resolution than BIND."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 forbids a CNAME from coexisting with any other data at the same owner name, but RFC 2136 §3.4.3 only defines the add operation and does not specify how a server must map or order errors when a single UPDATE message requests both a CNAME and a non-CNAME RR at that owner. That leaves room for implementations to reject the whole UPDATE, partially apply it, or enforce exclusivity in different orders."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add then delete the identical RR within one UPDATE",
+  "test_rationale": "This test targets the underspecified interaction between RFC 2136 add and delete semantics when both operations name the exact same RR in a single UPDATE message. Because the protocol text defines each operation separately but not their composition, different servers may either collapse the pair, apply it literally, or reject it. A follow-up QUERY on the touched RRset makes the final state observable, while the UPDATE reply itself can also distinguish implementations.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Processes the UPDATE sequentially and returns success, leaving the RR absent after the delete_rr.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host.campus.edu. TXT rrset absent"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the add-then-delete-of-identical-RR sequence as a conflicting or invalid UPDATE and rejects it.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "host.campus.edu. TXT rrset unchanged/present"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 and §3.4.3 define add_rr and delete_rr individually, but do not specify how a server must handle an exact add/delete pair for the same RR inside one UPDATE. That leaves room for canonicalization to no-op, sequential application, or rejection, producing divergent reply codes and/or final RRset state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

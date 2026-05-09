@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Conflicting TTLs for same RRset through multi-add",
+  "test_rationale": "This test targets the gap between wire-level validity of two add_rr RRs and the post-update RRset TTL consistency rule. By pre-seeding host.campus.edu. with a known A RR and then issuing one UPDATE that re-adds the exact RR once at TTL 300 and once at TTL 600, we force the server to choose between normalization, rejection, or another policy. A follow-up QUERY on the touched name makes any accepted normalization visible, while differing UPDATE rcodes expose rejection behavior.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE and normalizes the RRset to a single TTL choice, typically leaving the RRset present with one TTL value.",
+        "reply_rcode": "NOERROR",
+        "post_state": "rrset present; TTL normalized to a single value"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the conflicting TTL update as a format/rrset consistency error or otherwise does not apply both adds.",
+        "reply_rcode": "FORMERR",
+        "post_state": "rrset unchanged or update not applied"
+      }
+    },
+    "why_divergence": "RFC 2136 defines add_rr processing but does not specify how an UPDATE processor must resolve two adds that introduce the same RRset member with different TTLs. RFC 2181 §5.2 requires uniform TTLs within an RRset, but it does not define whether the server must normalize, ignore one TTL, or reject the update. That leaves the UPDATE reply and resulting RRset state underspecified."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

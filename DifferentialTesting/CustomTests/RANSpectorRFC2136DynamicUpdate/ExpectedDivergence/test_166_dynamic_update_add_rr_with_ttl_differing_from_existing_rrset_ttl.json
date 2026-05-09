@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add RR with TTL differing from existing RRset TTL",
+  "test_rationale": "This scenario first establishes a concrete A RRset and then sends a single UPDATE add_rr for the same owner/type/rdata with a different TTL. Because the only ambiguity is how servers reconcile the TTL mismatch against an existing RRset, the result can legitimately vary between accepting and normalizing the update or rejecting it as a semantic error. A follow-up QUERY on the touched name makes the post-state observable and lets Ferret distinguish implementations that diverge in reply behavior, state handling, or both.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accept the UPDATE and normalize/ignore the supplied TTL mismatch, preserving a single A RRset at the existing TTL.",
+        "reply_rcode": "NOERROR",
+        "post_state": "QUERY returns ttl.campus.edu. A with the original RRset present; TTL differences are not observable in the normalized comparison."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treat the TTL mismatch as a semantic conflict and fail the UPDATE without modifying the RRset.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "QUERY returns the pre-existing ttl.campus.edu. A RRset unchanged."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines add_rr semantics but does not specify how an UPDATE should behave when the added RR exactly matches an existing RRset member except for TTL. RFC 2181 §5.2 requires uniform TTLs within an RRset, but leaves unspecified whether an update engine must normalize the TTL, accept the update while preserving the old TTL, or reject the operation. That leaves a protocol gap that can surface as either differing UPDATE rcodes or differing post-update RRset handling."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

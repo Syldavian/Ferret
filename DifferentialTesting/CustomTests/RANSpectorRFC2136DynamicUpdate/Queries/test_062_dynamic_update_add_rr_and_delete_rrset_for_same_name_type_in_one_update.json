@@ -1,0 +1,39 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "intra_message_update_ordering",
+  "Notes": "Single UPDATE contains add_rr and delete_rrset for the same owner/type, with no prerequisites, to probe whether the server applies operations sequentially or as a net effect.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add host2.campus.edu. A and delete the host2.campus.edu. A RRset in the same UPDATE message, with no prerequisites.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "host2.campus.edu. 500 IN A 192.0.2.20"
+        },
+        {
+          "Kind": "delete_rrset",
+          "Name": "host2.campus.edu.",
+          "Type": "A"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host2.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RRset exists after the transaction."
+    }
+  ]
+}

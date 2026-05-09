@@ -1,0 +1,45 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "update_ordering_same_rrset",
+  "Notes": "Delete an existing RRset and add a new RR of the same owner/type within one UPDATE to probe whether the server applies operations sequentially or normalizes them as a batch.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the existing helper.campus.edu. A RRset, then add a new A RR for the same owner in the same UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "helper.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "helper.campus.edu.",
+          "Type": "A"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "helper.campus.edu. 500 IN A 192.0.2.11"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "helper.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RRset is absent or contains the newly added address after the UPDATE."
+    }
+  ]
+}

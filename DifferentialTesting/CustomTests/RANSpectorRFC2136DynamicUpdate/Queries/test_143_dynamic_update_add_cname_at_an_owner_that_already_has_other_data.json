@@ -1,0 +1,50 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_coexistence_conflict",
+  "Notes": "Add a CNAME at an owner that already has an A RRset, then query both A and CNAME to observe whether the server rejects the UPDATE, accepts and removes the A RRset, or leaves the existing data unchanged.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to add a CNAME at host2.campus.edu., which already has an A RRset.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "host2.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "host2.campus.edu. 500 IN CNAME alias.campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host2.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the CNAME was installed."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "host2.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the pre-existing A RRset was preserved or removed."
+    }
+  ]
+}

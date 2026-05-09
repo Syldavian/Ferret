@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add CNAME and other data at same owner in one UPDATE",
+  "test_rationale": "This test uses one UPDATE message to create the exact conflict the protocol leaves unspecified: a CNAME and an A RR at the same owner name. Because RFC 2136 does not define whether the server must reject the whole update, partially apply it, or order the additions, implementations may diverge in both the UPDATE reply and the resulting RRset state at alias.campus.edu. A follow-up QUERY makes the post-state directly observable.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects the conflicting UPDATE or otherwise preserves the CNAME exclusivity rule by not installing the incompatible A RRset.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "alias.campus.edu. has no data added by the update, or only the CNAME rrset is present; QUERY does not show both CNAME and A together."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accepts the UPDATE in a local order-dependent way or otherwise stores one/both RRsets differently.",
+        "reply_rcode": "NOERROR",
+        "post_state": "alias.campus.edu. returns CNAME, A, both, or a different surviving rrset composition than the other group."
+      }
+    },
+    "why_divergence": "RFC 2181 §5.2.2 states that a CNAME owner must not have any other data, but RFC 2136 §3.4.2–§3.4.3 do not specify how a server must resolve a single UPDATE that introduces both a CNAME and an incompatible RRset at the same owner name. The update processor's failure mode and any ordering rule are therefore underspecified, allowing differing reply codes and/or resulting zone contents."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

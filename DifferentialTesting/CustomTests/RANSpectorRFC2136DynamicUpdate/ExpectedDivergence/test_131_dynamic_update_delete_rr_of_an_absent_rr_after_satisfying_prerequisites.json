@@ -1,0 +1,40 @@
+{
+  "scenario_title": "delete_rr of an absent RR after satisfying prerequisites",
+  "test_rationale": "This test first proves the owner name is in use via an rrset_exists prerequisite, then issues delete_rr for an RR that is deliberately absent at that owner name. That isolates the underspecified branch in RFC 2136 §3.4.4: whether an absent targeted RR is treated as a no-op success or as a semantic failure. Because the zone is arranged so the update cannot alter any surviving data, the only meaningful oracle is the UPDATE reply RCODE, making it suitable for bind-versus-knot comparison.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat the absent delete_rr as a successful no-op after prerequisites succeed.",
+        "reply_rcode": "NOERROR",
+        "post_state": "miss.campus.edu. still has the original A and TXT rrsets; no change."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treat the absent delete_rr as a semantic failure for the targeted RR and abort the UPDATE.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "miss.campus.edu. still has the original A and TXT rrsets; no change."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.4 defines how to delete a specific RR if present, but does not specify the response when the targeted RR is absent and prerequisites have already succeeded. §3.4.1/§3.4.2 govern prerequisite failures, not this operation-level no-op vs semantic-failure choice, so implementations may differ between NOERROR and NXRRSET."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

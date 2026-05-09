@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add CNAME and another type at the same owner in one UPDATE",
+  "test_rationale": "This test exercises the underspecified boundary between dynamic update processing and CNAME exclusivity: one UPDATE atomically adds a CNAME and an A RR at the same owner. RFC 2181 forbids the final coexistence, but RFC 2136 does not mandate whether the server must reject the transaction, partially apply it, or favor one RRset over the other. The follow-up CNAME and A queries make the resulting state observable, capturing differences between servers that reject the update and servers that accept or internally reconcile it.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the UPDATE as a conflict between RR types that cannot coexist at one owner, likely returning an error such as YXRRSET or SERVFAIL, with no RRset created.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "No CNAME or A RRset exists at cname.campus.edu."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Apply an internal consistency policy for the conflicting adds, potentially accepting the UPDATE and leaving only the CNAME RRset or otherwise resolving the conflict differently.",
+        "reply_rcode": "NOERROR",
+        "post_state": "Either only the CNAME RRset exists at cname.campus.edu., or the A RRset is absent; follow-up QUERY distinguishes the resulting state."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 says a CNAME owner should not have other data, but RFC 2136 does not define the required update-time conflict policy or exact RCODE when a single UPDATE tries to create both a CNAME and a non-CNAME RRset at the same owner. As a result, implementations may reject the whole UPDATE or accept it and resolve the conflict internally, producing different replies and/or post-update state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

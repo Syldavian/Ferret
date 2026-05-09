@@ -1,0 +1,58 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_name_then_add_same_owner",
+  "Notes": "Single UPDATE deletes an existing owner name and then adds a new RR at the same owner to probe whether the server evaluates delete_name against the pre-update snapshot or as a barrier for later additions in the same message.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the helper owner name sweep.campus.edu., then add a new A RR at that same owner in the same UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "sweep.campus.edu."
+        },
+        {
+          "Kind": "rrset_exists",
+          "Name": "sweep.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_name",
+          "Name": "sweep.campus.edu."
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "sweep.campus.edu. 500 IN A 198.51.100.77"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "sweep.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RRset survives the delete_name/add_rr combination."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "sweep.campus.edu.",
+      "Type": "ANY",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the owner name exists at all after the UPDATE."
+    }
+  ]
+}

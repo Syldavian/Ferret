@@ -1,0 +1,38 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "update_order_semantics",
+  "Notes": "Single UPDATE adds an RR and then deletes that exact RR in the same message, with no prerequisites. This probes whether the server processes the update list strictly in order or as a net effect.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add host1.campus.edu. A 192.0.2.20, then delete that exact RR in the same UPDATE.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "host1.campus.edu. 500 IN A 192.0.2.20"
+        },
+        {
+          "Kind": "delete_rr",
+          "Rr": "host1.campus.edu. 500 IN A 192.0.2.20"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host1.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the post-state of host1.campus.edu. A after the UPDATE."
+    }
+  ]
+}

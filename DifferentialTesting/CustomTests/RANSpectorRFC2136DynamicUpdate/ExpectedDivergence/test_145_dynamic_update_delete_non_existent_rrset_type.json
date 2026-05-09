@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Delete non-existent RRset type",
+  "test_rationale": "This scenario isolates the underspecified case directly: the zone contains an existing owner name with no MX RRset, the UPDATE explicitly satisfies owner existence via a prerequisite, and the only operation is delete_rrset for the missing type. Because the resulting zone state is identical regardless of the server’s choice, the test cleanly exposes reply-code divergence between implementations while keeping the post-state invariant and easy to verify with a follow-up QUERY.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats delete_rrset for an absent type at an existing owner as a successful no-op.",
+        "reply_rcode": "NOERROR",
+        "post_state": "keep.campus.edu. MX remains absent; the zone is unchanged."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the delete of a missing RRset type with an error response.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "keep.campus.edu. MX remains absent; the zone is unchanged."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines delete_rrset semantics, and §7.2 notes that Update Section processing does not use data-present/absent prerequisites to describe every state transition, but it does not uniquely prescribe whether deleting a non-existent RRset at an existing owner should be reported as success or as an error. That leaves compliant implementations free to differ in the UPDATE reply while leaving the zone unchanged."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

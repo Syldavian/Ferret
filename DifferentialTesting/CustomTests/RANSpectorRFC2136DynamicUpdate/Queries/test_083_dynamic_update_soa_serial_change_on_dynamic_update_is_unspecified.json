@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "soa_serial_policy",
+  "Notes": "Observe whether a successful UPDATE that changes an ordinary RR causes the apex SOA serial to change automatically, and if so whether BIND and Knot apply different serial policies.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add a helper RR under the zone apex without directly touching the SOA, then observe whether the server changes the apex SOA serial as part of applying the update.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "host6.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "host7.campus.edu. 500 IN A 172.20.0.7"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "SOA",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the apex SOA after the update and compare the serial with the initial value."
+    }
+  ]
+}

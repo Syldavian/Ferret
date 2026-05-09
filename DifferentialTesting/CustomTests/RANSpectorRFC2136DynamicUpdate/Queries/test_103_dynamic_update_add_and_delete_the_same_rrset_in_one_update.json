@@ -1,0 +1,39 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "intra_update_add_then_delete_rrset",
+  "Notes": "Single UPDATE adds an A RRset at temp.campus.edu. and deletes the same owner/type rrset in the same message, with no prerequisites, to probe whether the server treats UPDATE RRs as ordered, atomic, or set-like.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add temp.campus.edu. A 192.0.2.10, then delete the temp.campus.edu. A rrset in the same UPDATE.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "temp.campus.edu. 500 IN A 192.0.2.10"
+        },
+        {
+          "Kind": "delete_rrset",
+          "Name": "temp.campus.edu.",
+          "Type": "A"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "temp.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A rrset remains present after the UPDATE."
+    }
+  ]
+}

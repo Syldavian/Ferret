@@ -1,0 +1,53 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "rrset_equals_then_delete_name",
+  "Notes": "Pin the A RRset at m.campus.edu. with rrset_equals, then issue delete_name for the same owner in the same UPDATE. Follow with queries for A and MX to observe whether sibling RRsets survive, the entire name is wiped, or the server rejects the composition.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Assert the current A RRset at m.campus.edu., then delete the entire name in the same UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "m.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "m.campus.edu. 500 IN A 198.51.100.10"
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_name",
+          "Name": "m.campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "m.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RRset remains, is removed, or the name is gone."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "m.campus.edu.",
+      "Type": "MX",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the sibling MX RRset survives the delete_name operation."
+    }
+  ]
+}

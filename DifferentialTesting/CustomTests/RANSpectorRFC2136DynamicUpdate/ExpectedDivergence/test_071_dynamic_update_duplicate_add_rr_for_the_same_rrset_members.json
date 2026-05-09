@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Duplicate add_rr for the same RRset members",
+  "test_rationale": "This test isolates the underspecified intra-message duplicate-add case by sending one standards-compliant UPDATE with two identical add_rr records for the same A RR. Because the zone initially already contains the RR, the server must decide whether to treat the second add as a harmless duplicate, merge it away, or fail the UPDATE. A follow-up QUERY on the touched name records the post-state so Ferret can distinguish acceptance with suppression from outright rejection.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the duplicate add_rrs, suppresses the duplicate as meaningless, and stores a single A RR.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host1.campus.edu. has one A RR (rrset present once)."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the duplicated add_rr as an UPDATE error and rejects the message, leaving the zone unchanged.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "host1.campus.edu. remains with the original single A RR from the initial zone file."
+      }
+    },
+    "why_divergence": "RFC 2136 §3 and §3.4 define UPDATE message structure and processing but do not say how a server must handle two identical add_rr operations for the same owner/type/RDATA within one packet. RFC 2181 §5 says duplicates are meaningless and servers should suppress such duplicates if encountered, but it does not clearly bind UPDATE semantics or mandate a specific RCODE. Therefore implementations may either coalesce/suppress the duplicate and return NOERROR, or reject the packet with an error such as SERVFAIL while leaving state unchanged."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

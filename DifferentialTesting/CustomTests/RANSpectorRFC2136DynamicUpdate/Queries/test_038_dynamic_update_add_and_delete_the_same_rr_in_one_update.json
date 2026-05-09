@@ -1,0 +1,51 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "update_intra_message_add_delete_cancellation",
+  "Notes": "Single UPDATE contains an add_rr and delete_rr for the exact same owner/type/RDATA. The follow-up QUERY observes whether the RR remains present or absent after the server processes the update message.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add and delete the same A RR for x.campus.edu. in one UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "x.campus.edu."
+        },
+        {
+          "Kind": "rrset_equals",
+          "Name": "x.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "x.campus.edu. 500 IN A 192.0.2.10"
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "x.campus.edu. 500 IN A 192.0.2.20"
+        },
+        {
+          "Kind": "delete_rr",
+          "Rr": "x.campus.edu. 500 IN A 192.0.2.20"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "x.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RRset is unchanged, absent, or otherwise affected by intra-UPDATE cancellation semantics."
+    }
+  ]
+}

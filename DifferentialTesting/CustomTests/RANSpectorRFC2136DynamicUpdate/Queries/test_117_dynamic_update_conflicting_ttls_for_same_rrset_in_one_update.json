@@ -1,0 +1,44 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "conflicting_ttls_same_rrset",
+  "Notes": "Single UPDATE adds two A RRs for the same owner with different TTLs in the same message, then a QUERY checks whether the server rejected the update or canonicalized the resulting RRset.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add g.campus.edu. A with two different TTLs in one UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_absent",
+          "Name": "g.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "g.campus.edu. 300 IN A 192.0.2.63"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "g.campus.edu. 600 IN A 192.0.2.64"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "g.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RRset exists, and if so whether it was accepted as a single canonicalized RRset or not applied."
+    }
+  ]
+}

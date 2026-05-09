@@ -1,0 +1,49 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_conflict_add",
+  "Notes": "Add a CNAME to an owner that already has A and NS data, then query the owner for CNAME and A to observe server-specific handling of the exclusivity conflict.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Prereq passes for an existing owner name, then add a CNAME at the same owner that already has A/NS data.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "host.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "host.campus.edu. 500 IN CNAME alias.campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the CNAME RRset was created or rejected."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "host.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the pre-existing A RRset survived unchanged."
+    }
+  ]
+}

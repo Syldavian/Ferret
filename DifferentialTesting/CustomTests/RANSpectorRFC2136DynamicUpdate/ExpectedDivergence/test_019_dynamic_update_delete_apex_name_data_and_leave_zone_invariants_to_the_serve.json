@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Delete apex name data and leave zone invariants to the server",
+  "test_rationale": "This test sends a single UPDATE that deletes the apex name of an ordinary primary zone. That operation is precisely the underspecified corner described by the issue: RFC 2136 does not say whether deleting the apex is permitted, and RFC 3007 only says the server must maintain SOA-related data if changes are made. By querying the apex SOA and NS afterward, the scenario can distinguish servers that refuse the update from those that accept it and auto-repair the apex, making the divergence directly observable.",
+  "involved_rfcs": [
+    "3007",
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Refuse the apex delete_name UPDATE as semantically invalid for the zone apex, preserving existing apex data.",
+        "reply_rcode": "REFUSED",
+        "post_state": "Apex SOA and NS remain unchanged."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept or partially apply the UPDATE and auto-repair apex invariants by regenerating or preserving minimal apex SOA/NS state.",
+        "reply_rcode": "NOERROR",
+        "post_state": "Apex SOA/NS may be rewritten, with observable serial change or normalized apex contents."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 and §3.4.3 define name deletion operations, but do not specify the exact handling of deleting the zone apex itself. RFC 3007 §4.4 requires SOA maintenance if changes are made, yet leaves the invariant-preserving algorithm and failure mode unspecified for an apex delete. As a result, servers may diverge on whether to refuse the UPDATE or accept it and repair the apex, producing both reply and post-state differences."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

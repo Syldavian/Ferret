@@ -1,0 +1,41 @@
+{
+  "scenario_title": "add_rr at a CNAME owner with no simultaneous delete",
+  "test_rationale": "This test isolates the gap by starting with a clean CNAME owner and then issuing a single add_rr for a different type at the same name, with no prerequisite or delete to remove the CNAME. Standards require CNAME exclusivity, but do not define whether the UPDATE should be rejected with a name-conflict style error or accepted by replacing/augmenting the RRset. The follow-up queries make both the reply and the post-update zone state observable.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the UPDATE because the target name already owns a CNAME and the add_rr would violate CNAME exclusivity; preserve the original CNAME-only state.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "alias.campus.edu. continues to have only the CNAME RRset; no A RRset is present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept or transform the UPDATE in a way that permits the new RR to coexist with or replace the existing CNAME.",
+        "reply_rcode": "NOERROR",
+        "post_state": "alias.campus.edu. has an A RRset and either the CNAME is removed or an inconsistent dual-RR state is observable."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 says a CNAME owner may have no other data, but RFC 2136 §3.4.3 does not specify how an UPDATE processor must respond when an add_rr targets a name that already owns a CNAME. That leaves both the update RCODE and the resulting zone state underspecified."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

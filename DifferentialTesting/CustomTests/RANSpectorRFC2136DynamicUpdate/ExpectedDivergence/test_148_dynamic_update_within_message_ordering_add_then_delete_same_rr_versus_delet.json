@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Within-message ordering: add then delete same RR versus delete then add",
+  "test_rationale": "The zone starts with a single TXT rrset at ord.campus.edu. so the UPDATE can target an existing owner without needing additional setup. The UPDATE adds a new TXT RR and then deletes that same RR in the same message, which is exactly the unspecified ordering/canonicalization case. A server that applies changes strictly in order will leave the preexisting rrset unchanged and answer NOERROR, while a server that treats the conflict declaratively may reject the message or otherwise diverge. The follow-up QUERY makes the final rrset observable.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Processes the UPDATE in message order; the add is applied and then the delete removes the same RR, leaving only the original TXT \"base\" rrset.",
+        "reply_rcode": "NOERROR",
+        "post_state": "ord.campus.edu. TXT rrset remains exactly \"base\"."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Canonicalizes or rejects the conflicting intra-message add/delete pair instead of honoring strict message order.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "ord.campus.edu. TXT rrset is not changed from the initial \"base\" state."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 describes UPDATE as a sequence of additions and deletions, but it does not define how a server must resolve conflicting operations on the same RR within one message. RFC 2136 §7.2 discusses prerequisites as the mechanism for expressing dependencies, yet it does not mandate an intra-Update Section ordering rule. As a result, servers may apply operations sequentially, collapse them semantically, or reject the message, yielding divergent reply codes and/or final zone state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

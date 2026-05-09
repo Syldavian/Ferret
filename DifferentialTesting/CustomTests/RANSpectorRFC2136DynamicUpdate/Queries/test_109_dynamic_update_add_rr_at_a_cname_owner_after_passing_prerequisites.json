@@ -1,0 +1,49 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_add_rr_conflict",
+  "Notes": "Probe how servers handle adding an A RR at an owner that already has a CNAME after a satisfied name_in_use prerequisite.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Satisfy the name_in_use prerequisite at alias1.campus.edu. and then add an A RR at the same owner, which already has a CNAME.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "alias1.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "alias1.campus.edu. 500 IN A 192.0.2.61"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "alias1.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the alias remains after the UPDATE."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "alias1.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the added A RR is present at the CNAME owner."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Duplicate add_rr for the same RRset member in one UPDATE",
+  "test_rationale": "This test isolates intra-message duplication by using an empty target name and a single UPDATE with two identical add_rr operations for the same owner, type, and rdata. A server that normalizes duplicate additions may return NOERROR and leave one RR present, while a server that validates duplicate insertion as a conflict may reject the UPDATE and leave the name absent. The follow-up QUERY on y.campus.edu. A makes the result binary and observable.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE and stores a single A RR for y.campus.edu. after coalescing or treating the second identical add as a no-op.",
+        "reply_rcode": "NOERROR",
+        "post_state": "y.campus.edu. has one A RR: 192.0.2.20"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE or otherwise handles the duplicate add as a conflict, leaving no A RR at y.campus.edu.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "y.campus.edu. has no A RRset"
+      }
+    },
+    "why_divergence": "RFC 2136 defines add_rr encoding and general UPDATE processing, but it does not specify whether two identical additions to the same RRset within one UPDATE are coalesced, applied sequentially, or treated as a duplicate conflict. That leaves implementations free to differ in both the UPDATE RCODE and the resulting RRset state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

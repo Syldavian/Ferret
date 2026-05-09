@@ -1,0 +1,48 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_rrset_then_add_rr_same_type",
+  "Notes": "One UPDATE deletes the existing A RRset at f.campus.edu. and then adds a new A RR for the same owner/type. The follow-up QUERY checks whether the server treated the message like an in-message replace, rejected it, or preserved the old RRset.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the existing A RRset at f.campus.edu. and then add a different A RR at the same owner/type in the same UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "f.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "f.campus.edu. 500 IN A 192.0.2.61"
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "f.campus.edu.",
+          "Type": "A"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "f.campus.edu. 500 IN A 192.0.2.62"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "f.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the post-state of f.campus.edu. A after the UPDATE."
+    }
+  ]
+}

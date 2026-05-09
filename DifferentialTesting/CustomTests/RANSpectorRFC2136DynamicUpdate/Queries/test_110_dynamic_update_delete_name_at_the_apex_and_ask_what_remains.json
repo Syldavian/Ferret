@@ -1,0 +1,44 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "apex_delete_name",
+  "Notes": "Attempt to delete the zone apex name with a single delete_name operation, then query apex SOA and NS to observe whether the server refuses the update or applies it and what remains at the origin.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the zone apex name campus.edu. using delete_name as the sole update operation.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "delete_name",
+          "Name": "campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "SOA",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the apex SOA rrset remains after the update attempt."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "NS",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the apex NS rrset remains after the update attempt."
+    }
+  ]
+}

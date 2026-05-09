@@ -1,0 +1,53 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "apex_delete_name_underspec",
+  "Notes": "Targets delete_name at the zone apex, where SOA and NS are mandatory, to observe whether servers reject the UPDATE or partially apply it.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the zone apex name campus.edu. with delete_name, without prerequisites, leaving the fate of mandatory SOA/NS data underspecified.",
+      "Operations": [
+        {
+          "Kind": "delete_name",
+          "Name": "campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "SOA",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the apex SOA remains present after the UPDATE."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "NS",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the apex NS remains present after the UPDATE."
+    },
+    {
+      "Id": "q3",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the non-mandatory apex TXT survives or is deleted."
+    }
+  ]
+}

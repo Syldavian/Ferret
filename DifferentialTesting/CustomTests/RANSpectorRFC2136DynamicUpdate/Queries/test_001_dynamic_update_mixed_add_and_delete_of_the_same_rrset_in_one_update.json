@@ -1,0 +1,45 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "intra_update_conflict",
+  "Notes": "Single UPDATE contains both add_rr and delete_rrset for the same owner/type, with a trivial prerequisite on the apex SOA RRset to ensure the message is accepted into processing.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add an A RR to www.campus.edu. and then delete the same RRset in the same UPDATE message.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "campus.edu.",
+          "Type": "SOA"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "www.campus.edu. 500 IN A 192.0.2.2"
+        },
+        {
+          "Kind": "delete_rrset",
+          "Name": "www.campus.edu.",
+          "Type": "A"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "www.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RRset remains present after the conflicting UPDATE."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "scenario_title": "delete_rrset for a type that is absent but the owner name exists",
+  "test_rationale": "This test isolates the underspecified edge case where the owner name exists, the prerequisite confirms that fact, and the UPDATE requests deletion of a type that is absent. That makes the operation semantically plausible but state-mismatched, which is precisely the gap: some servers may accept it as an idempotent no-op and return NOERROR, while others may reject it with NXRRSET or SERVFAIL. The follow-up queries confirm the post-state is unchanged and provide a consistent observation channel even when only the reply diverges.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats delete_rrset for an absent type as an idempotent no-op when the owner name exists and the prerequisite is satisfied.",
+        "reply_rcode": "NOERROR",
+        "post_state": "x.campus.edu. retains its A RRset and has no TXT RRset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the semantically mismatched delete_rrset as a prerequisite-style or server error while leaving the zone unchanged.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "x.campus.edu. retains its A RRset and has no TXT RRset."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.3 defines delete_rrset as removing all RRs of a given type, but §7.2 does not clearly specify whether attempting to delete an already-absent RRset at an existing name must succeed silently or fail with NXRRSET/SERVFAIL. As a result, compliant servers may differ only in the UPDATE reply code while leaving the zone unchanged."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

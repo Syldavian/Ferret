@@ -1,0 +1,44 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "duplicate_add_rr_conflicting_ttls",
+  "Notes": "Single UPDATE adds the same A RR twice with different TTLs to probe whether the server normalizes, preserves one TTL, or rejects the transaction.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add the same RR twice in one UPDATE with conflicting TTLs.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_absent",
+          "Name": "z.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "z.campus.edu. 60 IN A 192.0.2.40"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "z.campus.edu. 600 IN A 192.0.2.40"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "z.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the resulting RRset, if any, after the UPDATE."
+    }
+  ]
+}

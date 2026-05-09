@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Mixed add and delete of the same RRset in one UPDATE",
+  "test_rationale": "This test isolates the underspecified intra-message conflict resolution rule by sending one syntactically valid UPDATE that both adds and deletes the same A RRset at www.campus.edu. in a single packet. Because RFC 2136 does not define whether the server must treat the update section as ordered, set-like, or contradictory, compliant servers may either accept and remove the RRset, reject the packet, or preserve the original data. The follow-up QUERY makes the resulting RRset state directly observable.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Processes the UPDATE sequentially and accepts it; the later delete_rrset removes the A RRset, leaving no A answer for www.campus.edu.",
+        "reply_rcode": "NOERROR",
+        "post_state": "absent"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the internally contradictory UPDATE as a server error or data-state conflict, leaving the preexisting A RRset unchanged.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "192.0.2.1"
+      }
+    },
+    "why_divergence": "RFC 2136 defines add_rr and delete_rrset as separate update actions, but does not specify how a single UPDATE message must resolve contradictory edits to the same owner/type, nor whether update-section operations are applied in order or normalized before execution. As a result, implementations may either apply the edits sequentially or reject the packet, producing divergent reply codes and/or final RRset contents."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

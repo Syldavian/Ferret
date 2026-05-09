@@ -1,0 +1,49 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_owner_add_rr",
+  "Notes": "Attempt to add a non-CNAME RR at a name that already has a CNAME. Servers may differ on whether they reject the UPDATE or accept it while preserving or discarding the CNAME.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add an A RR at alias.campus.edu., which already owns a CNAME to target.campus.edu.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "alias.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "alias.campus.edu. 500 IN A 192.0.2.51"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "alias.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the existing CNAME remains present after the UPDATE attempt."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "alias.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the added A RR became visible at the CNAME owner."
+    }
+  ]
+}

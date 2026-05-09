@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Delete then add the same RRset type in one UPDATE",
+  "test_rationale": "This scenario uses a single UPDATE that first deletes an existing A RRset and then adds a new A RR for the same name, which is exactly the order-sensitivity gap left unspecified by RFC 2136. Because both operations target the same RRset and there is an existing RRset to delete, one server may end with the replacement RRset present while another may end with it absent, even if both return NOERROR. A follow-up QUERY on the touched name provides a clear binary oracle for the post-update state.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "post_state_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Processes the UPDATE sequentially, so delete_rrset removes the existing A RRset and the subsequent add_rr recreates it.",
+        "reply_rcode": "NOERROR",
+        "post_state": "helper.campus.edu. has A 192.0.2.11"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the UPDATE as a normalized batch or otherwise does not preserve delete-then-add ordering for the same RRset.",
+        "reply_rcode": "NOERROR",
+        "post_state": "helper.campus.edu. has no A RRset"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4 describes the Update Section as a set of resource record instances, and §7.2 does not define an ordering algorithm for conflicting operations on the same owner/type within one UPDATE. RFC 2181 §5.2 clarifies RRset semantics, but does not resolve whether delete_rrset followed by add_rr must be applied sequentially or can be collapsed. Therefore implementations may differ on whether the new RRset survives or the delete dominates."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

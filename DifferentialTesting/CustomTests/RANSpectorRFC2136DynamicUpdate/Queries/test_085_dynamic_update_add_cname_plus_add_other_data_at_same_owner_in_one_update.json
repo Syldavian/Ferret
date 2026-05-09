@@ -1,0 +1,54 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_exclusivity_update_conflict",
+  "Notes": "Single UPDATE adds a CNAME and a different RR type at the same owner name, exercising undefined intra-message CNAME exclusivity handling.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add a CNAME and an A RR at the same owner name in one UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_absent",
+          "Name": "alias1.campus.edu.",
+          "Type": "CNAME"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "alias1.campus.edu. 500 IN CNAME target1.campus.edu."
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "alias1.campus.edu. 500 IN A 198.51.100.11"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "alias1.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the CNAME survives."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "alias1.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RR survives."
+    }
+  ]
+}

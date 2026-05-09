@@ -1,0 +1,61 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_a_same_owner_conflict",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add a CNAME and an A RR at the same owner name in one UPDATE, after proving the name currently exists as an A-only owner.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "cname.campus.edu."
+        },
+        {
+          "Kind": "rrset_equals",
+          "Name": "cname.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "cname.campus.edu. 500 IN A 192.0.2.10"
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "cname.campus.edu. 500 IN CNAME target.campus.edu."
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "cname.campus.edu. 500 IN A 192.0.2.40"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "cname.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the server retained the CNAME rrset, rejected the update, or normalized it away."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "cname.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A rrset coexists with the CNAME, was removed, or was never committed."
+    }
+  ]
+}

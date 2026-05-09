@@ -1,0 +1,51 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "apex_ns_rrset_delete",
+  "Notes": "Delete the apex NS RRset while leaving the SOA intact, then query the apex RRsets to observe whether the server allowed the update, rejected it, or repaired the zone state.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the apex NS RRset at campus.edu. while leaving the SOA untouched.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "campus.edu.",
+          "Type": "NS"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "campus.edu.",
+          "Type": "NS"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "NS",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the apex NS RRset still exists after the UPDATE."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "SOA",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the apex SOA remains present after the UPDATE."
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_rrset_missing_type",
+  "Notes": "Prerequisite ensures host4.campus.edu. exists with an A RRset but no TXT RRset. The UPDATE requests delete_rrset for the absent TXT type, which RFC 2136 does not clearly classify when the owner name is in use.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Assert host4.campus.edu. exists, then delete the absent TXT RRset at that owner name.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "host4.campus.edu."
+        },
+        {
+          "Kind": "rrset_absent",
+          "Name": "host4.campus.edu.",
+          "Type": "TXT"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "host4.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host4.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Verify whether the existing A RRset survived the UPDATE."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "host4.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the absent TXT RRset remains absent after the UPDATE."
+    }
+  ]
+}

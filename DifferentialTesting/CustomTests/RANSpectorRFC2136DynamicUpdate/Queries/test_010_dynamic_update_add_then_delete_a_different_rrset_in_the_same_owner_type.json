@@ -1,0 +1,45 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "ordered_update_conflict",
+  "Notes": "Add an A RR and then delete the whole A RRset for the same owner in one UPDATE; observe whether the server applies operations sequentially or rejects/ignores the conflict.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add temp.campus.edu. A, then delete the temp.campus.edu. A RRset in the same UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_absent",
+          "Name": "temp.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "temp.campus.edu. 500 IN A 192.0.2.60"
+        },
+        {
+          "Kind": "delete_rrset",
+          "Name": "temp.campus.edu.",
+          "Type": "A"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "temp.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether temp.campus.edu. exists after the UPDATE."
+    }
+  ]
+}

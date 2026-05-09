@@ -1,0 +1,50 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_rrset_absent_after_name_in_use",
+  "Notes": "Establish name existence with a prerequisite on n.campus.edu., then attempt delete_rrset for TXT at that same name where no TXT RRset exists. Follow with QUERYs to observe whether the server treated the empty delete_rrset as NOERROR/no-op or as an NXRRSET-style failure with unchanged state.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Prove n.campus.edu. exists, then request delete_rrset for absent TXT RRset.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "n.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "n.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "n.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Confirm the helper A RRset remains present regardless of update outcome."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "n.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether a TXT RRset is absent after the attempted delete_rrset."
+    }
+  ]
+}

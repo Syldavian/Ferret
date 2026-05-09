@@ -1,0 +1,40 @@
+{
+  "scenario_title": "delete_rrset of a non-existent type",
+  "test_rationale": "The zone contains a valid apex and a helper owner name that has only an A RRset, so TXT is absent but the owner exists. The single UPDATE issues delete_rrset for that absent TXT RRset without prerequisites, which is syntactically valid yet semantically underdefined by RFC 2136. A follow-up QUERY of the same owner/type records the unchanged post-state, while the decisive oracle is the UPDATE RCODE, allowing BIND and Knot to diverge in a Ferret-executable way.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats delete_rrset of an absent RRset as a harmless no-op and accepts the UPDATE.",
+        "reply_rcode": "NOERROR",
+        "post_state": "QUERY for helper.campus.edu. TXT returns no answer/NXRRSET; zone remains unchanged."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE when the targeted RRset does not exist.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "QUERY for helper.campus.edu. TXT returns no answer/NXRRSET; zone remains unchanged."
+      }
+    },
+    "why_divergence": "RFC 2136 §3 and §3.4 describe delete_rrset semantics, but they do not mandate a specific outcome when the targeted RRset is already absent and no prerequisite constrains the operation. As a result, compliant servers may differ on whether to answer NOERROR or an error such as NXRRSET, making the UPDATE reply the observable divergence."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

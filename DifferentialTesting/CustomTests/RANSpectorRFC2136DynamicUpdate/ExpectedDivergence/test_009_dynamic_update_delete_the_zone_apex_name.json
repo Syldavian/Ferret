@@ -1,0 +1,42 @@
+{
+  "scenario_title": "Delete the zone apex name",
+  "test_rationale": "This test sends a single dynamic UPDATE with delete_name targeting the zone apex, which is syntactically valid in the generic model but semantically ambiguous for an authoritative zone apex that must preserve SOA and NS. The follow-up SOA and NS queries make the resulting state observable, while the UPDATE reply itself may differ across implementations because RFC 2136 does not mandate a specific failure or success code for apex deletion.",
+  "involved_rfcs": [
+    "2136",
+    "1035",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject delete_name at the zone apex and preserve the authoritative apex rrsets.",
+        "reply_rcode": "REFUSED",
+        "post_state": "campus.edu. still answers with SOA and NS rrsets unchanged."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the apex delete as a server error or policy violation, or otherwise handle the apex differently from BIND.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "campus.edu. still answers with SOA and NS rrsets unchanged."
+      }
+    },
+    "why_divergence": "RFC 2136 §3 defines delete_name generically, but does not specify the required handling when the owner name is the zone apex. RFC 1035 §3.3.13 and RFC 2181 §4 require the apex to retain SOA and NS for a valid authoritative zone, yet RFC 2136 does not say whether an apex delete must be refused, partially applied, or converted into special retention semantics, nor which RCODE is required. That leaves both the reply code and any post-update apex state underspecified."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

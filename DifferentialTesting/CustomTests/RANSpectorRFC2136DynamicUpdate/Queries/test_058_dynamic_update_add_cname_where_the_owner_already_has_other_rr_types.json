@@ -1,0 +1,44 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_on_existing_multi_type_owner",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add a CNAME at m.campus.edu., which already has A and MX data, with no prerequisites. RFC 2181 requires CNAME exclusivity, but RFC 2136 does not specify whether the server must reject the update or implicitly remove the existing RRsets first.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "m.campus.edu. 500 IN CNAME target.campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "m.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the CNAME was installed."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "m.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the pre-existing A RRset remains."
+    }
+  ]
+}

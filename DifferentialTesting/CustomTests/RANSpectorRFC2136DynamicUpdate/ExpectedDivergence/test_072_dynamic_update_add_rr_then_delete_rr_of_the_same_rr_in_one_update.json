@@ -1,0 +1,41 @@
+{
+  "scenario_title": "add_rr then delete_rr of the same RR in one UPDATE",
+  "test_rationale": "This scenario uses the smallest possible UPDATE that exercises the ambiguity: one RR is added and then deleted in the same message, with no prerequisites and a follow-up query on the touched name. If the implementation processes updates sequentially, the net effect is no change and the UPDATE should succeed; if it validates for internal conflicts or uses a non-sequential model, it may reject the message. The query records the resulting RRset so the test has a stable post-state oracle alongside the UPDATE reply.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Applies UPDATE operations sequentially, so the RR is added and then removed; UPDATE succeeds.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host1.campus.edu. retains only the original A RR 192.0.2.10."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the conflicting add/delete pair as invalid or detects a semantic conflict in the same UPDATE.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "host1.campus.edu. remains unchanged with A RR 192.0.2.10 only."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines add_rr and delete_rr message formats and §7.2 discusses update processing, but it does not specify whether operations in one UPDATE must be applied strictly in wire order or whether later operations are evaluated against the original state or as a net delta. That leaves the outcome of an add_rr immediately followed by a delete_rr of the same RR underspecified, including whether the server should succeed, fail with SERVFAIL, or interpret the message as a no-op."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

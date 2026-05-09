@@ -1,0 +1,38 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "update_same_rrset_delete_then_add",
+  "Notes": "Single UPDATE deletes the existing y.campus.edu. A RRset and then adds a new A RR in the same RRset. The server's intra-message ordering/combination policy is the only point under test.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the existing y.campus.edu. A RRset and then add a new A RR to the same RRset in one UPDATE, with no prerequisites.",
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "y.campus.edu.",
+          "Type": "A"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "y.campus.edu. 500 IN A 192.0.2.41"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "y.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RRset exists after the UPDATE and, if so, which address remains."
+    }
+  ]
+}

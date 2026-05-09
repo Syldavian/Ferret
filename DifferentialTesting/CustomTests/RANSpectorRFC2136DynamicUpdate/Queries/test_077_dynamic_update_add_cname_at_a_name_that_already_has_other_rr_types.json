@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_existing_owner_conflict",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to add a CNAME at alias2.campus.edu., which already has an A RRset.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "alias2.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "alias2.campus.edu. 500 IN CNAME target2.campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "alias2.campus.edu.",
+      "Type": "ANY",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the owner now has only the CNAME, still has the A RRset, or remains unchanged after the UPDATE."
+    }
+  ]
+}

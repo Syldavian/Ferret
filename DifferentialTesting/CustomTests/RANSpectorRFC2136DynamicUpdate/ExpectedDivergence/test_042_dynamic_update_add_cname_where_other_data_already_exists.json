@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add CNAME where other data already exists",
+  "test_rationale": "This test starts with a minimal owner name that already has A and TXT rrsets, then sends a single UPDATE that tries to add a CNAME at the same owner without deleting the existing data. That directly exercises the underspecified interaction between RFC 2136 add semantics and RFC 2181's exclusivity rule for CNAMEs. The follow-up queries make the outcome observable by checking both whether the CNAME was installed and whether the original A rrset still exists, while also recording reply-code divergence on the UPDATE itself.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects the update because adding a CNAME at an existing owner conflicts with existing data; the CNAME is not installed and the old A/TXT data remain.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "host.campus.edu. continues to have its original A and TXT rrsets, with no CNAME rrset present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the update with a server-policy style refusal rather than a name-in-use semantic error; the CNAME is not installed and the old data remain.",
+        "reply_rcode": "REFUSED",
+        "post_state": "host.campus.edu. continues to have its original A and TXT rrsets, with no CNAME rrset present."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 says an alias name may have no other data, but RFC 2136 §3.4.2 only defines primitive add semantics and does not bind the server to a specific rejection code or exact handling when an UPDATE adds a CNAME to a name that already has other rrsets. This leaves a gap in how the UPDATE processor maps the semantic conflict into reply code and post-state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

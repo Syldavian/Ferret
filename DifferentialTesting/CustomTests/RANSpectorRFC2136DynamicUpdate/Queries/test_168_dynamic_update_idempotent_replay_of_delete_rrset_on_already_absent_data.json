@@ -1,0 +1,35 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "idempotent_delete_rrset_replay",
+  "Notes": "Start with no replay.campus.edu. TXT RRset present. Replaying the same syntactically valid delete_rrset against an already-absent RRset may be accepted as an idempotent no-op or rejected as NXRRSET; follow-up query confirms the RRset remains absent either way.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the absent TXT RRset at replay.campus.edu. with no prerequisites.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "replay.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "replay.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe that the TXT RRset remains absent after the update."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Operation-order dependence within one UPDATE",
+  "test_rationale": "This test isolates the underspecification by using one UPDATE that first deletes the only A RR at w.campus.edu. and then adds a CNAME at the same owner name. If the server executes the Update Section as a program, the final state is a valid CNAME-only node. If it instead normalizes or validates the packet as a whole, it may refuse the request or preserve the original A state. The follow-up CNAME and A queries make the difference observable as both reply-code and post-state divergence without requiring concurrency or multiple UPDATEs.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Processes the UPDATE sequentially. The delete_rr removes the A RR, then add_rr creates the CNAME, yielding a CNAME-only state.",
+        "reply_rcode": "NOERROR",
+        "post_state": "w.campus.edu. has CNAME target.campus.edu. and no A RR."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the UPDATE Section as a normalized set of actions or rejects the conflicting same-name/type transition within one packet.",
+        "reply_rcode": "REFUSED",
+        "post_state": "w.campus.edu. remains A-only, or no CNAME is created."
+      }
+    },
+    "why_divergence": "RFC 2136 §2 and §3.4.2 define the Update Section as a list of RRs and specify the kinds of updates, but they do not normatively state whether a server must apply those RRs strictly in wire order or may first normalize the packet into a set of actions. That leaves the outcome of a same-packet delete-then-add transition at one owner name underspecified. RFC 2181 §5.5 addresses RR and RRset ordering in other contexts, not UPDATE semantics."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

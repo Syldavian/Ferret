@@ -1,0 +1,38 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "duplicate_add_rr",
+  "Notes": "Single UPDATE carries two identical add_rr operations for the same RR; observe whether the server collapses duplicates, accepts them idempotently, or rejects the transaction.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add the same A RR twice in one UPDATE with no prerequisites.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "host2.campus.edu. 500 IN A 192.0.2.20"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "host2.campus.edu. 500 IN A 192.0.2.20"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host2.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether host2.campus.edu. A exists after the UPDATE and whether only one RRset member is present."
+    }
+  ]
+}

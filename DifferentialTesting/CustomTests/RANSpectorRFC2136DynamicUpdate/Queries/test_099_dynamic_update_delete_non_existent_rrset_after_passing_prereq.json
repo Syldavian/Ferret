@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_nonexistent_rrset_after_prereq",
+  "Notes": "Trigger an UPDATE that is otherwise valid by proving the owner name is in use, then request deletion of a TXT RRset that is not present at that name. The follow-up QUERY checks whether the RRset remains absent after the UPDATE regardless of reply code.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Prove absentset.campus.edu. is in use via its A RRset, then attempt to delete a non-existent TXT RRset at the same owner name.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "absentset.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "absentset.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "absentset.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the TXT RRset is still absent after the UPDATE."
+    }
+  ]
+}

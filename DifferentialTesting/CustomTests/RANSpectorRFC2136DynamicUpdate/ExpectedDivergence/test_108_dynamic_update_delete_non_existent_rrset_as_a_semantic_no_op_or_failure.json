@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Delete non-existent RRset as a semantic no-op or failure",
+  "test_rationale": "This test isolates the underspecified choice point in RFC 2136 by updating an existing owner name whose target rrset is absent, then issuing a single delete_rrset for that missing type. The prerequisite rrset_absent makes the starting state explicit, and the follow-up QUERY confirms that both outcomes leave the zone unchanged. The only observable divergence is therefore the UPDATE RCODE, which is exactly the protocol gap being exercised.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats delete_rrset of an absent rrset as a benign no-op and accepts the UPDATE.",
+        "reply_rcode": "NOERROR",
+        "post_state": "missingset.campus.edu. has no TXT rrset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats delete_rrset of an absent rrset as a semantic error and rejects the UPDATE.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "missingset.campus.edu. has no TXT rrset."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines delete_rrset syntax and prerequisite handling, but does not clearly mandate whether deleting an rrset that is already absent must succeed as an idempotent no-op or fail with NXRRSET (or another error). As a result, servers can diverge in the UPDATE reply while producing the same post-state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

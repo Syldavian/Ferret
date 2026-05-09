@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add then delete the same RR in one UPDATE",
+  "test_rationale": "This test isolates the underspecified behavior around contradictory UPDATE operations by sending one syntactically valid dynamic update that both adds and deletes the exact same RR in the same message. Because RFC 2136 does not define whether such operations are processed sequentially, normalized away, or rejected as contradictory, different servers may either succeed with no net change or fail with an error such as SERVFAIL. The post-UPDATE QUERY for y.campus.edu. A provides a stable oracle for whether the RR was left present or absent, making the divergence observable without using prerequisites, TSIG, or multiple UPDATEs.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Applies the UPDATE operations in order or normalizes them to a net no-op; returns a successful UPDATE reply and leaves no A RR at y.campus.edu.",
+        "reply_rcode": "NOERROR",
+        "post_state": "y.campus.edu. has no A rrset"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the contradictory add/delete sequence as an error or handles the internal conflict differently, resulting in a failure reply and/or different final visibility of y.campus.edu.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "y.campus.edu. absent or otherwise not an A rrset"
+      }
+    },
+    "why_divergence": "RFC 2136 §2 and §3 define the UPDATE wire format and processing framework, but they do not specify how a server must resolve an add_rr immediately followed by delete_rr for the identical RR within the same UPDATE. RFC 2136 §7.2 describes prerequisites for expressing state dependencies, yet it does not force UPDATE-section operations to be interpreted as an ordered program or as a normalized set of net changes. RFC 2181 §5.2 reinforces that servers may differ in how they treat conflicting DNS data, so implementations can legitimately diverge in reply code and/or resulting state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

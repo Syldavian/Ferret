@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Delete an RR then re-add it with a different TTL in one UPDATE",
+  "test_rationale": "This test isolates the underspecified corner where the same RR is removed and reinserted in one UPDATE with a different TTL. The initial zone contains a single A RR so the update targets a real RRset member and the follow-up query can detect whether the record persists and, if so, whether the server effectively accepted the re-add semantics. That makes the update processing order and TTL policy observable without needing multiple clients, TSIG, or zone transfers.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats the delete-then-add as a replacement within one UPDATE and accepts the new TTL, leaving the A RR present after the update.",
+        "reply_rcode": "NOERROR",
+        "post_state": "ttltest.campus.edu. A present"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects or normalizes the same-message delete/add with a differing TTL in a way that prevents the new RR from being installed.",
+        "reply_rcode": "NOERROR",
+        "post_state": "ttltest.campus.edu. A absent or unchanged at TTL 300"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines high-level UPDATE processing but does not specify how to sequence a delete_rr followed by an add_rr for the same RR in one message when the TTL differs. RFC 2181 §5.2 deprecates differing TTLs within an RRset, but it does not define whether an UPDATE processor must treat this as a replacement, reject it, or preserve the original TTL, so implementations can diverge in both reply handling and resulting zone state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

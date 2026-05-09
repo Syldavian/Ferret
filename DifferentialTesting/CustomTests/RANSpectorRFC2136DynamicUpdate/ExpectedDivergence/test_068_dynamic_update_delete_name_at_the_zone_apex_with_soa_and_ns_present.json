@@ -1,0 +1,41 @@
+{
+  "scenario_title": "delete_name at the zone apex with SOA and NS present",
+  "test_rationale": "This scenario exercises the underspecified case where an unauthenticated dynamic update deletes the zone apex name itself. Because the apex necessarily hosts SOA and NS, RFC 2136 and RFC 3007 do not say whether servers must reject the update, automatically protect those rrsets, or remove the apex data. The test uses a single delete_name operation followed by SOA and NS queries at the apex so the runner can detect either a refusal or an accepted but altered post-state.",
+  "involved_rfcs": [
+    "2136",
+    "3007"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts delete_name at the apex and applies it as deletion of apex data, yielding a changed post-state visible on SOA/NS queries or a vacuous apex response.",
+        "reply_rcode": "NOERROR",
+        "post_state": "campus.edu. no longer returns the original apex SOA/NS rrsets, or returns an altered apex state."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Refuses the apex delete_name UPDATE to protect the zone apex, leaving SOA/NS intact.",
+        "reply_rcode": "REFUSED",
+        "post_state": "campus.edu. continues to return the original SOA and NS rrsets."
+      }
+    },
+    "why_divergence": "RFC 2136 §3 and §4.2 define delete_name syntax and update processing but do not state that deleting the zone apex must be rejected or that SOA/NS are preserved. RFC 3007 §3.1.1 only gives a SHOULD NOT policy for normal users, not a wire-level prohibition or mandatory server action. As a result, implementations may either refuse the UPDATE or accept it and change apex post-state, producing observable divergence in reply and/or follow-up QUERY results."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

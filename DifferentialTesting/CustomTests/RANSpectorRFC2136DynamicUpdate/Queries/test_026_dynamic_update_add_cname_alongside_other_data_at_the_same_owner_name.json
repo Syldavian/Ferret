@@ -1,0 +1,48 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_exclusivity_update_conflict",
+  "Notes": "Single UPDATE attempts to create a CNAME RRset and an A RRset at the same owner name in one atomic message, with no prerequisites, to probe whether the server rejects the conflict or applies one/both RRsets.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add a CNAME and an A RR at the same owner name in one UPDATE.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "cnamehost.campus.edu. 500 IN CNAME target.campus.edu."
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "cnamehost.campus.edu. 500 IN A 192.0.2.30"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "cnamehost.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the CNAME RRset exists after the update."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "cnamehost.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RRset exists after the update."
+    }
+  ]
+}

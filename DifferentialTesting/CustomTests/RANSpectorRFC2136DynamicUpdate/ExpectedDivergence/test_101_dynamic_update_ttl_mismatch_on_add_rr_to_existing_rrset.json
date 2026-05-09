@@ -1,0 +1,43 @@
+{
+  "scenario_title": "TTL mismatch on add_rr to existing RRset",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE and stores the added RR into the RRset, typically normalizing TTL handling so the resulting RRset is internally consistent.",
+        "reply_rcode": "NOERROR",
+        "post_state": "Query returns an A RRset for ttl.campus.edu. containing both 192.0.2.60 and 192.0.2.61, with TTL ignored for comparison."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE because the added RR's TTL conflicts with the existing RRset's TTL invariant.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "Query still returns only the original A RRset member 192.0.2.60."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines add_rr semantics but does not specify how to handle a TTL mismatch against an existing RRset member. RFC 2181 §5.2 requires uniform TTLs within an RRset, but it does not mandate the UPDATE server's action when an incoming addition violates that invariant. As a result, compliant servers may differ by accepting and normalizing the RRset or by rejecting the UPDATE, producing observable differences in both reply code and post-state.",
+    "test_rationale": "The zone seeds a stable A RRset at ttl.campus.edu. with a known TTL, then issues a single syntactically valid UPDATE that adds another A RR for the same owner name using a different TTL. This directly exercises the underspecified choice point between accepting, normalizing, or rejecting TTL-mismatched additions to an existing RRset. A follow-up QUERY on the touched name reveals whether the update took effect and whether the RRset now contains the added address, making the divergence observable for BIND versus Knot.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add RR to a name that already owns a CNAME",
+  "test_rationale": "The zone starts with a legal CNAME-only owner name, then issues a syntactically valid UPDATE that adds an A RR at that same owner. This isolates the underspecified question of how RFC 2136 servers handle CNAME exclusivity violations during UPDATE processing. The follow-up queries to CNAME and A at the touched name provide a stable oracle for whether the server preserved the original state, partially applied the change, or rejected it with differing reply semantics.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the UPDATE with a conflict-style response and leave the zone unchanged.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "cname.campus.edu. continues to return only the CNAME RRset; no A RR appears."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the UPDATE with a different server-specific error path, or accept the UPDATE but suppress the conflicting A addition; either way the observable result differs from group_1 in reply and/or committed state.",
+        "reply_rcode": "REFUSED",
+        "post_state": "cname.campus.edu. retains the CNAME RRset and does not expose an A RR."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 states that a CNAME must not coexist with other data at the same owner name, but RFC 2136 §3.4.2 does not define a mandatory UPDATE-time RCODE or a required commit/rollback policy for an add_rr that would violate that rule. As a result, implementations may map the conflict to different rejections such as YXRRSET, REFUSED, or even other server-side failures, and may differ on whether the attempted RR is silently ignored versus fully rejected."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

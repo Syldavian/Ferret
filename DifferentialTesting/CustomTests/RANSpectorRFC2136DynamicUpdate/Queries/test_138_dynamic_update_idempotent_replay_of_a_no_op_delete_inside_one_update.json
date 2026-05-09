@@ -1,0 +1,48 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "absent_delete_noop_replay",
+  "Notes": "Prerequisite is satisfied on flag.campus.edu.; the UPDATE then attempts a delete_rr for an RR at noop.campus.edu. that is absent, alongside a harmless add/delete pair on probe.campus.edu. The observation query checks whether the harmless add persisted.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Satisfy the prerequisite, then replay an absent-target delete_rr in the same UPDATE with unrelated add/delete operations.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "flag.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "probe.campus.edu. 500 IN TXT \"updated\""
+        },
+        {
+          "Kind": "delete_rr",
+          "Rr": "noop.campus.edu. 500 IN TXT \"absent\""
+        },
+        {
+          "Kind": "delete_rr",
+          "Rr": "probe.campus.edu. 500 IN TXT \"updated\""
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "probe.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the harmless add/delete pair was committed despite the absent-target delete_rr."
+    }
+  ]
+}

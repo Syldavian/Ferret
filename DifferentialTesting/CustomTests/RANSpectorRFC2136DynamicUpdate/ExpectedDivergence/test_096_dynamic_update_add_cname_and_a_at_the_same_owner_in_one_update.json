@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add CNAME and A at the same owner in one UPDATE",
+  "test_rationale": "This scenario creates the classic intra-message semantic contradiction by adding both a CNAME and an A record to the same owner name in a single UPDATE. The owner starts as a simple A-only node so the update can be applied against an existing name, and the follow-up queries check whether the server rejected the update or committed some subset of it. Because RFC 2136 does not define the processor rule for a newly created forbidden CNAME/A combination, BIND and Knot can diverge on both the UPDATE reply and the resulting rrsets.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the UPDATE because it would create an invalid CNAME-plus-other-data owner, commonly with YXRRSET or SERVFAIL; post-state remains the original A-only rrset.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "cname.campus.edu. remains A-only with 192.0.2.10; no CNAME rrset present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the UPDATE more strictly or fail processing the semantic conflict, potentially surfacing SERVFAIL; post-state remains unchanged.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "cname.campus.edu. remains A-only with 192.0.2.10; no CNAME rrset present."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines primitive add_rr processing but does not specify what an UPDATE processor must do when two add operations in the same message would create an RRset combination forbidden by RFC 2181 §10.1 (CNAME coexisting with other data at the same owner). Therefore implementations may differ on whether to reject the whole UPDATE, partially apply it, or normalize the result, producing divergent reply codes and/or post-update state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

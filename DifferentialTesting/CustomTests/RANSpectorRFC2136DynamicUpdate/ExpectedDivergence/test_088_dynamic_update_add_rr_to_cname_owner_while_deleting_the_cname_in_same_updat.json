@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add RR to CNAME owner while deleting the CNAME in same UPDATE",
+  "test_rationale": "This scenario is the smallest wire image that exercises the sequencing gap: the owner starts with only a CNAME, then the same UPDATE removes that CNAME and tries to add an A at the same name. Because RFC 2136 does not define whether the server must evaluate CNAME exclusivity before or after applying the delete_rr, different implementations may either accept the transition and publish the A or reject it and preserve the CNAME. The follow-up queries make the final state observable even when the reply code alone is not sufficient.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Evaluates the UPDATE against the post-delete state, accepts the name transition, and ends with no CNAME and one A RR at host.campus.edu.",
+        "reply_rcode": "NOERROR",
+        "post_state": "CNAME absent; A rrset present at host.campus.edu."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Evaluates CNAME exclusivity against the pre-state or rejects the mixed transition, leaving the original CNAME in place and not installing the A RR.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "CNAME remains present; A rrset absent at host.campus.edu."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4 and §7.2 define UPDATE prerequisites and the update section as an unordered set of changes, but do not specify an intra-message ordering rule for a delete_rr followed by an add_rr at the same owner. RFC 2181 §10.1 makes CNAME exclusivity clear, yet leaves unspecified whether that constraint is checked against the pre-update state or after the CNAME deletion within the same UPDATE. As a result, compliant servers can diverge on both the reply RCODE and the resulting rrsets."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

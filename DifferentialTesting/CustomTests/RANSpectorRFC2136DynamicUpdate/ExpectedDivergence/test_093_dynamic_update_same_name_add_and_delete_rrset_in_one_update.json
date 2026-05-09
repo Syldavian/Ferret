@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Same-name add and delete_rrset in one UPDATE",
+  "test_rationale": "This scenario isolates the underspecified case of a single dynamic update message that both adds an RR and deletes the containing RRset for the same owner and type. The prerequisite makes the RRset present so the delete_rrset is meaningful, while the follow-up query distinguishes implementations that accept the message but end with an empty RRset from those that reject or preserve the preexisting data. Because RFC 2136 does not define a required intra-message ordering or atomic conflict policy for same-name add/delete_rrset combinations, BIND and Knot can legitimately diverge here.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Applies the add and then the delete_rrset, or otherwise resolves the conflict by leaving the RRset absent while still accepting the UPDATE.",
+        "reply_rcode": "NOERROR",
+        "post_state": "QUERY for x.campus.edu. A returns no answer / empty rrset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the same-name add_rr and delete_rrset in one UPDATE as an invalid conflict and rejects the message, or applies a different intra-message policy.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "QUERY for x.campus.edu. A remains as the original RRset, or is otherwise unchanged from pre-update state."
+      }
+    },
+    "why_divergence": "RFC 2136 §3 and §3.4 define UPDATE sections and operations, but do not specify intra-message ordering or conflict resolution when one UPDATE both adds an RR to an RRset and deletes that same RRset. RFC 2181 §5.2 constrains RRset integrity, but not this update-time conflict. As a result, compliant servers may differ on whether the add is visible before the delete, whether delete wins, or whether the whole UPDATE is rejected, leading to different reply RCODES and/or post-update RRset state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

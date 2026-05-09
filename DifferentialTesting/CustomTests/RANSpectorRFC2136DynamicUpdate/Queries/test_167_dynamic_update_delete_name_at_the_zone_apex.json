@@ -1,0 +1,44 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "apex_delete_name_underspec",
+  "Notes": "Delete the zone apex name with no prerequisites and no other operations, then query the apex SOA/NS to observe whether the server refused the update or applied a broader apex purge/minimal-retention policy.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the zone apex name campus.edu. with no prerequisites and no other operations.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "delete_name",
+          "Name": "campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "SOA",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the apex SOA remains present after the update attempt."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "NS",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the apex NS remains present after the update attempt."
+    }
+  ]
+}

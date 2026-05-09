@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Idempotent replay of delete_rrset on already-absent data",
+  "test_rationale": "This test isolates the gray area around replaying a syntactically valid delete_rrset for an RRset that is already absent. The UPDATE touches a name inside the zone and does not rely on prerequisites, so the only meaningful choice is how the server classifies absence. The follow-up QUERY ensures the post-state is the same regardless of whether the server replies NOERROR or NXRRSET, making the divergence reply-only and directly attributable to the protocol underspecification.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats delete_rrset on an already-absent RRset as an idempotent no-op.",
+        "reply_rcode": "NOERROR",
+        "post_state": "replay.campus.edu. TXT remains absent."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Signals that the targeted RRset did not exist for deletion.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "replay.campus.edu. TXT remains absent."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.3 defines delete_rrset semantics when matching data exist, but it does not state whether deleting an already-absent RRset must succeed as an idempotent no-op or fail with NXRRSET. As a result, compliant servers may diverge only in the UPDATE reply code while leaving the zone unchanged."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Conflicting CNAME and A additions at one owner name",
+  "test_rationale": "This test isolates the protocol gap by sending one syntactically valid dynamic update that simultaneously creates a CNAME and an A RR at the same owner name, with no prerequisites and no other zone changes. RFC 2181 says the resulting owner name must not have other data, but RFC 2136 does not say whether the server must reject the message, apply only one RRset, or otherwise resolve the conflict. The follow-up queries to the touched name make both the reply and the post-state observable, yielding a binary oracle for implementations that differ in how they enforce CNAME exclusivity during UPDATE processing.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the UPDATE because the two additions conflict with the CNAME exclusivity rule, leaving the name absent.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "alias.campus.edu. remains absent; neither CNAME nor A rrset is present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept the UPDATE and retain only one rrset at the owner name, normalizing the conflict deterministically.",
+        "reply_rcode": "NOERROR",
+        "post_state": "alias.campus.edu. has exactly one of the two rrsets, typically the CNAME rrset, while the conflicting A rrset is absent."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 requires that a CNAME owner have no other data, but RFC 2136 does not specify how a single UPDATE message should be processed when it adds both a CNAME and another RR type at the same owner name. The server may reject the whole UPDATE, partially apply it, or deterministically retain one RRset, so both the reply code and the resulting zone state are underspecified."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

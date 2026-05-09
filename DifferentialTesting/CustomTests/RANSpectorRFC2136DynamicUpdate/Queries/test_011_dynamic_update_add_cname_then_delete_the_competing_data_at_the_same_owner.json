@@ -1,0 +1,53 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_delete_competing_rrset_ordering",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Single UPDATE that adds a CNAME at clash.campus.edu. and deletes the competing A rrset at the same owner, leaving the final state legal only if the server sequences the delete before the add.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "clash.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "clash.campus.edu. 500 IN A 192.0.2.70"
+          ]
+        },
+        {
+          "Kind": "rrset_absent",
+          "Name": "clash.campus.edu.",
+          "Type": "CNAME"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "clash.campus.edu.",
+          "Type": "A"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "clash.campus.edu. 500 IN CNAME target.campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "clash.campus.edu.",
+      "Type": "ANY",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the server ended with only the CNAME, rejected the update, or preserved the old A rrset."
+    }
+  ]
+}

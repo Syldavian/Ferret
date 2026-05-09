@@ -1,0 +1,57 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_delete_then_add_same_owner",
+  "Notes": "Single UPDATE deletes an existing CNAME at host.campus.edu. and adds an A RR at the same owner. The follow-up QUERY checks whether the server accepted the transition or enforced CNAME exclusivity against the pre-state.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the existing CNAME at host.campus.edu. and add an A RR at the same owner in one UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "host.campus.edu.",
+          "Type": "CNAME",
+          "Rrs": [
+            "host.campus.edu. 500 IN CNAME alias.campus.edu."
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "host.campus.edu. 500 IN CNAME alias.campus.edu."
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "host.campus.edu. 500 IN A 198.51.100.42"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the CNAME remains after the UPDATE."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "host.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RR was installed at the owner name."
+    }
+  ]
+}

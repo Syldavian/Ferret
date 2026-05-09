@@ -1,0 +1,62 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "operation_order_dependence",
+  "Notes": "Single UPDATE packet intentionally mixes add/delete on the same owner name to probe whether the server evaluates the Update Section strictly in wire order or normalizes it as an unordered set of actions.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the existing A RR for w.campus.edu., then add a CNAME at the same owner name in the same UPDATE. A sequential processor can end with a valid CNAME-only node; a set-normalizing processor may reject the packet or preserve a different final state.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "w.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "w.campus.edu. 500 IN A 192.0.2.90"
+          ]
+        },
+        {
+          "Kind": "rrset_absent",
+          "Name": "w.campus.edu.",
+          "Type": "CNAME"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "w.campus.edu. 500 IN A 192.0.2.90"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "w.campus.edu. 500 IN CNAME target.campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "w.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the CNAME was installed."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "w.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the old A RR remains or was removed."
+    }
+  ]
+}

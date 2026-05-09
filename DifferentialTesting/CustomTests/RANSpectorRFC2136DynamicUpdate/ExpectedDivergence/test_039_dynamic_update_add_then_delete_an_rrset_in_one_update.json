@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add then delete an RRset in one UPDATE",
+  "test_rationale": "This test creates a minimal transactional ambiguity: the UPDATE first adds a TXT RR to an existing RRset and then issues delete_rrset for the same owner/type. Because RFC 2136 does not define whether the delete_rrset applies to the original zone state, the intermediate state, or causes the message to be rejected, servers may either delete the RRset entirely or retain the newly added record. A follow-up QUERY on the touched name cleanly distinguishes the post-state.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Applies the delete_rrset to the RRset state after the add, so the UPDATE succeeds and the RRset is removed.",
+        "reply_rcode": "NOERROR",
+        "post_state": "y.campus.edu. TXT RRset is absent (NXRRSET to QUERY)."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the delete_rrset as targeting the pre-existing RRset only, so the earlier add recreates the RRset within the same transaction.",
+        "reply_rcode": "NOERROR",
+        "post_state": "y.campus.edu. TXT RRset contains \"new\"."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines add_rr and delete_rrset syntax and effects, but does not specify intra-message ordering or whether a later delete_rrset is evaluated against the pre-update zone state or the intermediate state created by earlier operations in the same UPDATE. RFC 2181 §5.2 and §5.4.1 define RRset properties and TTL uniformity, but do not define transactional resolution of contradictory same-message updates."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

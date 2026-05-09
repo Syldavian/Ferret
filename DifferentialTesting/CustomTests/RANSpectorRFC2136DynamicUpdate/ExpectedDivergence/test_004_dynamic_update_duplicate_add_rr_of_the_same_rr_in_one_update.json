@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Duplicate add_rr of the same RR in one UPDATE",
+  "test_rationale": "This test targets the underspecified corner where one UPDATE carries two identical add_rr records for the same RR. Because RFC 2136 says how to add data to an RRset but not what to do with repeated identical additions in the same request, servers may normalize the request to one RR, reject it, or otherwise differ in the resulting state. A follow-up QUERY on the touched name makes the post-state observable and keeps the scenario within Ferret’s single-UPDATE constraint.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE and coalesces the duplicate add_rr entries into a single RRset member.",
+        "reply_rcode": "NOERROR",
+        "post_state": "dup.campus.edu. has a single A RR for 192.0.2.30."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects or otherwise handles the redundant identical add_rr entries differently, yielding a different UPDATE outcome and/or no installed RR.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "dup.campus.edu. remains absent or differs from a single-member A RRset."
+      }
+    },
+    "why_divergence": "RFC 2136 defines add_rr semantics at the RRset level but does not specify how an UPDATE processor must handle multiple identical add_rr records for the same owner/type/rdata within one message. RFC 2181 treats RRsets as sets, but it does not give update-time rules for duplicate additions in a single request, so implementations may coalesce duplicates, preserve one copy, or reject the UPDATE, leading to observable differences in reply code and resulting zone state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

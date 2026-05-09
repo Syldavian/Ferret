@@ -1,0 +1,41 @@
+{
+  "scenario_title": "CNAME plus other-data add in one UPDATE",
+  "test_rationale": "The scenario starts with a normal data-bearing owner name and then sends one prereq-free UPDATE that syntactically adds both a CNAME and an A at that same owner. That is exactly the RFC 2181 exclusivity corner case left unspecified by RFC 2136: a server may reject the whole update, partially apply it, or otherwise normalize the owner-name RRsets. The follow-up CNAME and A queries make both reply differences and post-state differences observable for BIND versus Knot.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects the UPDATE when the added data would violate CNAME exclusivity, typically with an update failure response.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "x.campus.edu. retains only its pre-existing A RRset; no CNAME RRset is created."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accepts or otherwise processes the UPDATE differently, resulting in a distinct reply and/or resulting owner-name state for the CNAME/A combination.",
+        "reply_rcode": "NOERROR",
+        "post_state": "x.campus.edu. may show only one RRset or a server-normalized state after the conflicting additions."
+      }
+    },
+    "why_divergence": "RFC 2136 defines the UPDATE message and general processing, but it does not specify an atomic, ordered, or canonical conflict-resolution rule for an UPDATE that adds a CNAME and another data RR at the same owner name. RFC 2181 §10.1 states that a CNAME must not coexist with other data, yet it does not prescribe UPDATE-time handling, so servers can differ in whether they reject the message or how they materialize post-update state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add_rr to a name that already owns a CNAME",
+  "test_rationale": "The zone starts with c.campus.edu. owning only a CNAME, then performs a single UPDATE that adds an A RR at the same owner with no prerequisites. This directly exercises the undefined interaction between RFC 2136 dynamic add semantics and RFC 2181 CNAME exclusivity. The two follow-up queries independently observe whether the CNAME survived and whether the A rrset was created, making both the UPDATE response and the resulting zone state suitable for a binary oracle.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects the UPDATE because the owner already has a CNAME and does not permit adding other data there.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "QUERY returns only the original CNAME at c.campus.edu. and no A rrset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accepts the UPDATE and normalizes the node by replacing or removing the CNAME so the A can exist.",
+        "reply_rcode": "NOERROR",
+        "post_state": "QUERY returns an A rrset at c.campus.edu., with the CNAME absent."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 says a CNAME owner should not have other data, but RFC 2136 does not specify how an UPDATE that adds a non-CNAME RR to such a name must be processed. Implementations may reject the update, or may accept it by implicitly removing the CNAME or otherwise changing post-state, yielding divergent reply and query-visible results."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

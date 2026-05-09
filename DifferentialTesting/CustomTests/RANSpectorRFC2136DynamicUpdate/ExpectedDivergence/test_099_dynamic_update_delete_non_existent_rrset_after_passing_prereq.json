@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Delete non-existent RRset after passing prereq",
+  "test_rationale": "The zone contains a single helper owner name that is demonstrably in use via an A RRset, satisfying the update prerequisite while leaving the TXT RRset absent. The UPDATE then deletes that absent TXT RRset, which is the underspecified state-dependent case. A follow-up TXT QUERY provides a stable post-state check: the RRset should remain absent in all cases, so the observable divergence is primarily the UPDATE reply code.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats delete_rrset for an already-absent RRset as a successful no-op when prerequisites pass.",
+        "reply_rcode": "NOERROR",
+        "post_state": "absentset.campus.edu. TXT remains absent"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE because the targeted RRset is absent, despite the prerequisite passing.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "absentset.campus.edu. TXT remains absent"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.1–§3.4.2 defines RRset deletion syntax and general update processing, but does not precisely specify the required outcome when delete_rrset targets an RRset that is already absent after all prerequisites have succeeded. Implementations may therefore differ on whether to return NOERROR as a harmless no-op or NXRRSET/SERVFAIL as an error."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

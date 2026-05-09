@@ -1,0 +1,47 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "rrset_ttl_replace_ordering",
+  "Notes": "Single UPDATE deletes one A RR instance and re-adds the same owner/type/class/rdata with a different TTL. The follow-up query checks whether the server applied the re-add, rejected the update, or normalized TTL behavior.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete ttltest.campus.edu. A 192.0.2.40, then re-add the same RR with TTL 600 in the same UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "ttltest.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "ttltest.campus.edu. 300 IN A 192.0.2.40"
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "ttltest.campus.edu. 300 IN A 192.0.2.40"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "ttltest.campus.edu. 600 IN A 192.0.2.40"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "ttltest.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RR remains present after the UPDATE."
+    }
+  ]
+}

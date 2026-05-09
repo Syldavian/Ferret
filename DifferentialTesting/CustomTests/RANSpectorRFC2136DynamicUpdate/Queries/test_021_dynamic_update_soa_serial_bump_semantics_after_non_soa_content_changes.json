@@ -1,0 +1,41 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "soa_serial_bump_semantics",
+  "Notes": "Single non-SOA dynamic update that changes zone contents, followed by an SOA query to observe how the primary reports the serial immediately after UPDATE.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the helper A RRset for www.campus.edu. to change zone contents without directly modifying the SOA.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "www.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "www.campus.edu.",
+          "Type": "A"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "SOA",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the post-UPDATE SOA serial visible at the apex."
+    }
+  ]
+}

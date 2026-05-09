@@ -1,0 +1,49 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_absent_rr_prereq_satisfied",
+  "Notes": "Satisfy the prerequisite with name_in_use on the owner name, then attempt to delete a specific TXT RR that is not present. The zone should remain unchanged; only the UPDATE reply may diverge.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Prerequisite asserts the owner name exists; delete a specific absent TXT RR at that owner.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "absent1.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "absent1.campus.edu. 500 IN TXT \"missing\""
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "absent1.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe that the TXT rrset remains absent after the UPDATE regardless of reply code."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "absent1.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Confirm the existing A rrset is unchanged as a control."
+    }
+  ]
+}

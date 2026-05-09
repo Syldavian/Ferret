@@ -1,0 +1,42 @@
+{
+  "scenario_title": "delete_name at the zone apex",
+  "test_rationale": "This scenario targets the underspecified semantics of delete_name at the zone apex. The initial zone contains only the required apex SOA/NS plus one unrelated helper A RR below the apex so the update’s effect is isolated. A single unauthenticated UPDATE deleting the apex name forces the server to choose between policy rejection and some form of apex state mutation, and follow-up SOA/NS queries make the resulting state observable. That creates a Ferret-executable binary oracle across BIND and Knot on both reply code and post-state.",
+  "involved_rfcs": [
+    "2136",
+    "3007",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the apex delete_name as policy-forbidden or semantic failure, preserving the existing apex SOA and NS RRsets.",
+        "reply_rcode": "REFUSED",
+        "post_state": "apex SOA and NS remain unchanged"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Apply a different apex-delete policy, such as accepting the UPDATE or handling it as a broader apex purge/minimal-retention transition.",
+        "reply_rcode": "NOERROR",
+        "post_state": "apex SOA/NS state differs from the original zone, potentially leaving only mandatory apex data or a modified apex RRset set"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.3 defines delete_name generically but does not special-case the zone apex, while RFC 3007 §3.1.1 only says SOA and NS SHOULD NOT be modified by normal users. RFC 2181 does not mandate a single processor transition for apex deletion either. As a result, implementations may reject the request with a policy RCODE or accept it and mutate the apex RRsets differently, making both the UPDATE reply and the post-update apex state underspecified."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

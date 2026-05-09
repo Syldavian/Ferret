@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Duplicate add_rr of the same RR in one UPDATE",
+  "test_rationale": "This test isolates the underspecified case where one UPDATE contains two identical additions for the same owner, type, class, and RDATA. Because DNS RRsets are set-like, an implementation may collapse duplicates and succeed, or it may detect the duplicate as a transaction error and fail the UPDATE. The follow-up TXT query makes the post-state observable and provides a binary oracle together with the UPDATE reply.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats the duplicate add as idempotent RRset insertion and returns success; post-state contains the TXT RRset with one RR.",
+        "reply_rcode": "NOERROR",
+        "post_state": "dup.campus.edu. has TXT \"x\" as a single-member RRset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE as a semantic duplicate/conflict or otherwise fails the transaction.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "dup.campus.edu. remains without a TXT RRset."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 permits multiple RRs in the UPDATE Section but does not define the semantics of repeating the exact same add_rr twice in one message. RFC 2181 §5.2 treats RRsets as sets, which implies no duplicates, but it does not specify whether duplicates are collapsed silently, accepted as idempotent, or rejected during UPDATE processing. That leaves observable room for differing reply codes and resulting RRset contents."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

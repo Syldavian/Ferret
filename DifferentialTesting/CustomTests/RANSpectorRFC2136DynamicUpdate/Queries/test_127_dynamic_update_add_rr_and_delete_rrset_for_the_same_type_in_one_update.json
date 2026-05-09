@@ -1,0 +1,48 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "update_op_order_conflict",
+  "Notes": "Single UPDATE adds an RR of a type that is then deleted as an entire rrset for the same owner/type, exercising unspecified intra-message ordering.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add a TXT RR at op.campus.edu. and then delete the entire TXT rrset for the same owner/type in the same UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "op.campus.edu.",
+          "Type": "TXT",
+          "Rrs": [
+            "op.campus.edu. 500 IN TXT \"seed\""
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "op.campus.edu. 500 IN TXT \"added\""
+        },
+        {
+          "Kind": "delete_rrset",
+          "Name": "op.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "op.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the TXT rrset remains present or is removed after the conflicting UPDATE."
+    }
+  ]
+}

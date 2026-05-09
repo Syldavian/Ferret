@@ -1,0 +1,45 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "apex_ns_replacement_floor",
+  "Notes": "Replace the apex NS RRset with a smaller set in one atomic UPDATE, then query the apex NS RRset to observe whether the server accepted the underspecified transition or rejected/rolled back the change.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the existing apex NS RRset and add back only a single NS record at the zone apex.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "campus.edu.",
+          "Type": "NS"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "campus.edu.",
+          "Type": "NS"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "campus.edu. 500 IN NS ns1.alt.campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "NS",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the final apex NS RRset after the UPDATE completes."
+    }
+  ]
+}

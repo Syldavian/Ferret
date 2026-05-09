@@ -1,0 +1,41 @@
+{
+  "scenario_title": "TTL mismatch on duplicate RR insertion into an existing RRset",
+  "test_rationale": "This test isolates the underspecified corner where an UPDATE attempts to add an RR that is already present except for TTL. The initial zone provides a single A RRset for ttltest.campus.edu., and the sole UPDATE repeats the same owner/type/rdata with a different TTL. That forces the server to choose between preserving the existing TTL, normalizing the RRset, or rejecting the change. A subsequent QUERY on the same name makes the resulting state observable, while the UPDATE reply itself may also diverge.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accept the UPDATE and preserve the pre-existing RRset TTL, or otherwise normalize to a single TTL without rejecting the update.",
+        "reply_rcode": "NOERROR",
+        "post_state": "ttltest.campus.edu. remains present as a single A RRset; follow-up QUERY returns the RRset, typically with the original TTL retained."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the UPDATE because the duplicate add carries a conflicting TTL for an existing RR in the RRset.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "ttltest.campus.edu. remains unchanged with the original A RRset and TTL."
+      }
+    },
+    "why_divergence": "RFC 2181 §5.2–5.3 requires RRset TTL consistency, but RFC 2136 §3.4.2 does not specify how UPDATE processing should handle an add_rr whose owner/type/rdata already exists with a different TTL. As a result, servers may either accept and normalize/preserve the existing RRset TTL or reject the UPDATE, producing divergent reply codes and potentially different observed TTL handling in the post-state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

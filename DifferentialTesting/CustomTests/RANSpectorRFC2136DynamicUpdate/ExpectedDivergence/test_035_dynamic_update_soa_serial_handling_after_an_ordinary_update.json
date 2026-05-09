@@ -1,0 +1,41 @@
+{
+  "scenario_title": "SOA serial handling after an ordinary update",
+  "test_rationale": "The test performs one ordinary dynamic update that definitely changes zone contents, then immediately queries the zone apex SOA. This isolates the protocol gray area described by RFC 3007: whether the primary bumps the serial synchronously on acceptance of the UPDATE or defers/coalesces the maintenance until a later SOA retrieval. Because both behaviors can still satisfy the RFC language, the observable difference is in the post-update SOA serial rather than the UPDATE RCODE.",
+  "involved_rfcs": [
+    "2136",
+    "3007"
+  ],
+  "expected_divergence": {
+    "divergence_type": "post_state_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Serial is incremented immediately upon successful UPDATE and returned by the follow-up SOA query.",
+        "reply_rcode": "NOERROR",
+        "post_state": "SOA serial at campus.edu. is greater than 3, typically incremented by 1 for this single update."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Serial maintenance may be deferred or coalesced, so the immediate follow-up SOA query can still show the prior serial or a different increment policy.",
+        "reply_rcode": "NOERROR",
+        "post_state": "SOA serial at campus.edu. may remain at 3 momentarily or jump by an implementation-defined amount."
+      }
+    },
+    "why_divergence": "RFC 3007 §1.1 and §4.4 require the primary to maintain and, if necessary, generate a new SOA serial when an update occurs or before the next SOA retrieval, but they do not prescribe the increment amount or require the serial to be updated atomically in the immediate post-UPDATE state. As a result, compliant servers can differ in the SOA value visible to an immediate QUERY after a successful UPDATE."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

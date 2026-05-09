@@ -1,0 +1,42 @@
+{
+  "scenario_title": "Add RR into a name currently owning a CNAME",
+  "test_rationale": "This test preloads a simple alias name that already owns a CNAME, then sends a single UPDATE that adds an A RR at the same owner without deleting the CNAME. The prerequisites ensure the name and CNAME are present, so the only decision point is how the server handles the RFC 2181 CNAME exclusivity rule in RFC 2136 processing. Because RFC 2136 does not prescribe a unique RCODE or algorithm for this case, implementations may diverge in whether they reject the update or apply it and then normalize, making both the reply and post-update queries useful as a binary oracle.",
+  "involved_rfcs": [
+    "2136",
+    "2181",
+    "1034"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects the UPDATE when the add_rr would violate CNAME exclusivity, typically leaving the preexisting CNAME-only state intact.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "alias.campus.edu. still answers CNAME only; A is absent."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "May accept the UPDATE or otherwise handle the conflict differently, leading to a different reply and/or transiently different stored state.",
+        "reply_rcode": "NOERROR",
+        "post_state": "alias.campus.edu. may answer A in addition to, or instead of, the original CNAME until normalization or cleanup."
+      }
+    },
+    "why_divergence": "RFC 1034 §3.6.2 and RFC 2181 §10.1 prohibit other data alongside a CNAME, but RFC 2136 does not mandate a specific UPDATE error for an add_rr that would create such a conflict after prerequisites succeed. That leaves servers free to reject, accept, or normalize the state differently, which can be observed in both the UPDATE reply and the follow-up QUERY results."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

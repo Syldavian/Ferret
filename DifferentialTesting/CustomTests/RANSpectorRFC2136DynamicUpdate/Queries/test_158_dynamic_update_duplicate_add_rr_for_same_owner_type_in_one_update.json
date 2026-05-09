@@ -1,0 +1,38 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "duplicate_add_rr",
+  "Notes": "Single UPDATE carries the same add_rr twice for the same owner/type/class/RDATA. The intended oracle is whether the server treats the duplicate as harmless redundancy or as a semantic error, and whether the RRset is created once.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add the same A RR for dup.campus.edu. twice in one UPDATE, with no prerequisites.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "dup.campus.edu. 300 IN A 192.0.2.11"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "dup.campus.edu. 300 IN A 192.0.2.11"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "dup.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether dup.campus.edu. exists after the UPDATE and whether the RRset is present as a single normalized set."
+    }
+  ]
+}

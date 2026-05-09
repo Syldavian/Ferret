@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Simultaneous add CNAME and add other data at one name",
+  "test_rationale": "This test creates the exact ambiguous case: one dynamic update packet simultaneously adds a CNAME and an A RRset at the same owner name. The protocol clearly forbids the final node from containing both, but it does not prescribe whether the server must reject the entire UPDATE or accept and normalize the conflicting data. Querying the owner name for ANY, A, and CNAME makes the resulting post-state observable and distinguishes servers that reject versus those that partially apply or normalize the update.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the UPDATE because it would create a CNAME owner with other data; leave the preexisting A RRset unchanged.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "alias.campus.edu. continues to have only A 192.0.2.41; no CNAME appears."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept or partially apply the UPDATE in a way that normalizes the node, keeping only one of the conflicting RR types.",
+        "reply_rcode": "NOERROR",
+        "post_state": "alias.campus.edu. ends with only the CNAME RRset, or only the A RRset, depending on server normalization policy."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 states that a CNAME owner may have no other data, but RFC 2136 §3.4.2 does not specify a mandated UPDATE error or intra-message resolution rule for a single UPDATE that adds both a CNAME and non-CNAME data at the same owner name. Servers may therefore diverge either in the UPDATE RCODE they return or in which RRset survives after processing."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

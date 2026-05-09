@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Adding a record to a name while deleting its CNAME in the same UPDATE",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats the UPDATE as a sequence or otherwise permits the add after the CNAME delete, so the UPDATE succeeds and the name ends up with an A RRset.",
+        "reply_rcode": "NOERROR",
+        "post_state": "alias.campus.edu. has A 192.0.2.31 and no CNAME."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Evaluates legality against the pre-update state and rejects adding data at a name that currently owns a CNAME, even though the same UPDATE deletes that CNAME.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "alias.campus.edu. remains CNAME target.campus.edu. and has no A RRset."
+      }
+    },
+    "why_divergence": "RFC 2136 defines UPDATE sections and prerequisite handling but does not specify intra-message ordering semantics for multiple update operations touching the same owner name. RFC 2181 §10.1 requires a name to be a CNAME-only alias in steady state, but it does not say whether a CNAME deleted earlier in the same UPDATE may be ignored for legality checks on a later add_rr. Implementations may therefore differ on whether to apply the delete before validating the add or to validate solely against the pre-update zone state.",
+    "test_rationale": "This test starts with a legal CNAME alias and issues one UPDATE that deletes that CNAME and adds an A record at the same owner name. That directly probes the protocol gap around whether an UPDATE is processed as an ordered sequence or checked only against the initial state. The follow-up queries on both the CNAME and A RRsets make the result observable whether the server accepts the update or rejects it with a YXRRSET-style failure.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

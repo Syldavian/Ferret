@@ -1,0 +1,45 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "conflicting_update_ordering",
+  "Notes": "Single UPDATE adds an A RR and deletes the RRset for the same owner/type in the same message; follow-up QUERY checks whether the RRset is present, absent, or the UPDATE was rejected.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add y.campus.edu. A and delete the y.campus.edu. A RRset in the same UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_absent",
+          "Name": "y.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "y.campus.edu. 500 IN A 192.0.2.22"
+        },
+        {
+          "Kind": "delete_rrset",
+          "Name": "y.campus.edu.",
+          "Type": "A"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "y.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RRset exists after the conflicting UPDATE."
+    }
+  ]
+}

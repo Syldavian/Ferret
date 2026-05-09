@@ -1,0 +1,44 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "rrset_equals_duplicate_canonicalization",
+  "Notes": "Test whether identical duplicate members inside an rrset_equals prerequisite are canonicalized as a redundant exact set or rejected as malformed/ambiguous.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Prerequisite repeats the same A RR twice for helper.campus.edu. as an rrset_equals exact-match check; if accepted, add a harmless RR elsewhere in-zone.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "helper.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "helper.campus.edu. 500 IN A 192.0.2.9",
+            "helper.campus.edu. 500 IN A 192.0.2.9"
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "marker.campus.edu. 500 IN A 192.0.2.10"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "marker.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the harmless add was applied."
+    }
+  ]
+}

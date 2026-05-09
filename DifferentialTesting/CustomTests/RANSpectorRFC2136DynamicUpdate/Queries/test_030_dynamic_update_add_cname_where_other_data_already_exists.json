@@ -1,0 +1,50 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_add_conflict",
+  "Notes": "Add a CNAME at an owner name that already has an A RRset, then query the owner for A and CNAME to observe server-specific conflict handling.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to add a CNAME at cnameconflict.campus.edu. while an A RRset already exists there, without deleting the existing A.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "cnameconflict.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "cnameconflict.campus.edu. 500 IN CNAME target.campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "cnameconflict.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the original A RRset remains after the UPDATE."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "cnameconflict.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the CNAME was installed, rejected, or coexists with the A RRset."
+    }
+  ]
+}

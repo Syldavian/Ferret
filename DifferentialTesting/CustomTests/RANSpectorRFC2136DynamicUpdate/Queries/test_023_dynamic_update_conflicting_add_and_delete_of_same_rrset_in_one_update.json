@@ -1,0 +1,45 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "conflicting_add_delete_same_rrset",
+  "Notes": "Single UPDATE contains both an add_rr and a delete_rrset for the same owner/type, which is wire-valid but semantically contradictory under RFC2136's underspecified intra-message ordering/combination semantics.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add and then delete the same RRset in one atomic UPDATE message.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_absent",
+          "Name": "test.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "test.campus.edu. 500 IN A 192.0.2.10"
+        },
+        {
+          "Kind": "delete_rrset",
+          "Name": "test.campus.edu.",
+          "Type": "A"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "test.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RRset exists after the conflicting UPDATE."
+    }
+  ]
+}

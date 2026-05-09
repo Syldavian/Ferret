@@ -1,0 +1,43 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_exclusivity_conflict",
+  "Notes": "Single UPDATE adds a CNAME and an A RR at the same owner name alias.campus.edu. to probe server behavior when mutually exclusive data are introduced together.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add alias.campus.edu. as both a CNAME and an A owner in the same UPDATE message.",
+      "Prerequisites": [
+        {
+          "Kind": "name_absent",
+          "Name": "alias.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "alias.campus.edu. 300 IN CNAME target.campus.edu."
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "alias.campus.edu. 300 IN A 192.0.2.30"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "alias.campus.edu.",
+      "Type": "ANY",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the server kept the CNAME, the A RRset, both, or neither after the UPDATE."
+    }
+  ]
+}

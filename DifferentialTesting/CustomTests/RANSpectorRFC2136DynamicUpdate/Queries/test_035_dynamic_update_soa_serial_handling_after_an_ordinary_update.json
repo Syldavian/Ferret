@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "soa_serial_post_update",
+  "Notes": "Single harmless change to a helper RR, then immediately query the apex SOA to observe how the primary maintains the serial after an accepted update.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add one harmless helper A record in the zone so the update is guaranteed to change zone state and trigger SOA maintenance.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_absent",
+          "Name": "serialtest.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "serialtest.campus.edu. 500 IN A 198.51.100.7"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "SOA",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Immediately observe the apex SOA serial after the update."
+    }
+  ]
+}

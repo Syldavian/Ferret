@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add and delete the same RR in one UPDATE",
+  "test_rationale": "This test targets the underspecified interaction of two operations in a single RFC 2136 UPDATE: adding and deleting the exact same RR. The initial zone contains a stable A RR at x.campus.edu. so the UPDATE can act on a known name without needing complex prerequisites. Because the protocol does not say whether the server must apply the Update Section strictly in wire order, collapse duplicate/conflicting edits, or treat them as a no-op, implementations may differ in whether the final RRset is unchanged, transiently modified, or handled as an error-free acceptance with different internal commit semantics. The follow-up QUERY on the touched name makes the final state observable.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat the add_rr and delete_rr for the identical RR as sequential operations or otherwise normalize them so the update is accepted and leaves the RRset unchanged or absent depending on internal processing order.",
+        "reply_rcode": "NOERROR",
+        "post_state": "x.campus.edu. A may remain present as 192.0.2.10 only, or the transient 192.0.2.20 may not be observable."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Collapse the conflicting operations or treat the message as a no-op in a way that removes the added RR before commit, leaving only the preexisting RRset state.",
+        "reply_rcode": "NOERROR",
+        "post_state": "x.campus.edu. A remains exactly 192.0.2.10."
+      }
+    },
+    "why_divergence": "RFC 2136 §2 and §3.4.2 define UPDATE as a sequence of RRs in the Update Section and specify add/delete RR encodings, but they do not define semantics when the same owner/type/RDATA appears in both an add_rr and delete_rr within one message. RFC 2181 §5.4.1 discusses RR ordering within an RRset, not intra-message update cancellation or ordering. As a result, compliant servers may process, normalize, or collapse the pair differently, producing different post-update zone contents and potentially different reply handling."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

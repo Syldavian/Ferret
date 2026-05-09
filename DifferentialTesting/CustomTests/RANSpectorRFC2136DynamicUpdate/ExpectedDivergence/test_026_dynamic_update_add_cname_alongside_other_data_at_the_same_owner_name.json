@@ -1,0 +1,42 @@
+{
+  "scenario_title": "Add CNAME alongside other data at the same owner name",
+  "test_rationale": "This scenario creates the smallest possible atomic conflict: one UPDATE adds a CNAME and an A RR at the same owner name with no prerequisites and no preexisting data. The key gap is whether the UPDATE processor enforces CNAME exclusivity before commit, after partial application, or not at all. Querying both RR types after the update makes the outcome observable as either total rejection or a visible illegal/partial state.",
+  "involved_rfcs": [
+    "2136",
+    "2181",
+    "1034"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects the conflicting UPDATE atomically when it detects that adding both a CNAME and another RR type at the same owner name would violate RRset exclusivity.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "No rrset at cnamehost.campus.edu.; both CNAME and A queries return empty/no data."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accepts the UPDATE and retains one or both RRsets despite the intra-message exclusivity conflict, leaving a different visible post-state.",
+        "reply_rcode": "NOERROR",
+        "post_state": "cnamehost.campus.edu. has CNAME and/or A data visible in follow-up queries."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 and RFC 1034 §3.6.2 require that a CNAME not coexist with other data, but RFC 2136 §3.4.2 describes UPDATE processing atomically without specifying how to resolve a single message that creates an internally conflicting RRset state. That leaves the server’s handling of a CNAME plus another type at the same owner name underspecified, so implementations may reject the message or apply it differently, producing observable reply and/or post-update state divergence."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

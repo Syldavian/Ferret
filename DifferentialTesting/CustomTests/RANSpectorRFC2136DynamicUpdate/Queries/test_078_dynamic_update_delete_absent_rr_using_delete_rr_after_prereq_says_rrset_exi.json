@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_absent_rr_after_rrset_exists_prereq",
+  "Notes": "Prerequisite asserts the A RRset exists at host3.campus.edu. The UPDATE then attempts delete_rr of an A RR that is not present in that RRset, which RFC 2136 does not normatively classify as success versus error.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Assert that host3.campus.edu. has an A RRset, then delete a specific A RR that is not a member of that RRset.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "host3.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "host3.campus.edu. 500 IN A 192.0.2.72"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host3.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RRset remains unchanged after the UPDATE attempt."
+    }
+  ]
+}

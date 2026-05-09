@@ -1,0 +1,50 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_missing_rr_vs_delete_missing_rrset",
+  "Notes": "Targets the underspecified response to deleting absent data without prerequisites. The initial zone includes an unrelated RRset for post-update sanity checking and a helper A RRset at absent.campus.edu. so delete_rr can target a missing RR inside an existing RRset while delete_rrset can target an absent RRset at a name that otherwise exists.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to delete a missing RR at an existing owner name using delete_rr, without prerequisites.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "absent.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "absent.campus.edu. 500 IN A 192.0.2.99"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "absent.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Confirm whether the original RRset remained unchanged after the delete_rr attempt."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "present.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Check unrelated data to ensure the update did not alter other zone contents."
+    }
+  ]
+}

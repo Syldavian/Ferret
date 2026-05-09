@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_absent_rr_after_prereq",
+  "Notes": "Prereq proves z.campus.edu. A exists, then UPDATE attempts to delete a different A RR on the same owner that is absent from the rrset.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Satisfy an rrset_exists prerequisite on z.campus.edu. A, then delete an absent A RR at the same owner.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "z.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "z.campus.edu. 500 IN A 192.0.2.51"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "z.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the original A RR remains after the UPDATE."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add CNAME at a name that already has other data",
+  "test_rationale": "This test sets up a legal owner name that already contains ordinary data, then issues a single UPDATE that tries to add a CNAME at that same name. That makes the update syntactically valid but semantically conflicting under RFC 2181. The subsequent CNAME and A queries provide a stable oracle for whether the server preserved the original RRset set and whether the CNAME was installed, while the UPDATE reply itself captures the underspecified error mapping.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects the conflicting CNAME addition and preserves the existing A/NS data.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "host.campus.edu. still has A (and NS) data; no CNAME RRset is present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the conflicting CNAME addition with a different update failure mapping or conflict handling outcome.",
+        "reply_rcode": "REFUSED",
+        "post_state": "host.campus.edu. still has A (and NS) data; no CNAME RRset is present."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 says a CNAME cannot coexist with other data, but RFC 2136 does not specify which UPDATE error code to use for an add_rr that attempts to create that conflict, nor whether the server must treat it as an atomic no-op versus another rejection path. As a result, BIND and Knot can diverge in the UPDATE reply RCODE while leaving the post-state unchanged."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Duplicate add_rr of identical RR in one UPDATE",
+  "test_rationale": "This test targets the underspecified case where one UPDATE carries two identical add_rr records for the same name, type, class, TTL, and RDATA. Because the zone initially has no RRset at d.campus.edu., the server must decide whether duplicate insertion is an idempotent no-op, a tolerated redundancy that results in one stored RR, or a message-level syntax/processing error. The follow-up QUERY makes the observable difference explicit by distinguishing a created A RRset from no state change, while the UPDATE reply itself can also differ across implementations.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accept the UPDATE as idempotent or suppress the duplicate internally, returning success.",
+        "reply_rcode": "NOERROR",
+        "post_state": "d.campus.edu. has an A RRset containing 192.0.2.55."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treat the duplicated add_rr as a malformed or redundant UPDATE and reject it.",
+        "reply_rcode": "FORMERR",
+        "post_state": "d.campus.edu. remains absent; QUERY returns no A RRset."
+      }
+    },
+    "why_divergence": "RFC 2136 specifies UPDATE processing but does not say whether two identical add_rr RRs in the same UPDATE must be accepted, suppressed, or rejected. RFC 2181 §5 says duplicate RR data is meaningless and should be suppressed if encountered, but it does not define the outcome when the duplicate appears syntactically inside one UPDATE message. That leaves the server free to either apply the change once and return NOERROR or reject the message with FORMERR/SERVFAIL."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

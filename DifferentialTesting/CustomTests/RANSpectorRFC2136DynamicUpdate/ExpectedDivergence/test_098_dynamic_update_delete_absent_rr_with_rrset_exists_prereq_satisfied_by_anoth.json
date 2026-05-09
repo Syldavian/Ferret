@@ -1,0 +1,42 @@
+{
+  "scenario_title": "Delete absent RR with rrset_exists prereq satisfied by another RR",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat deletion of an absent RR from an existing RRset as a no-op and accept the UPDATE.",
+        "reply_rcode": "NOERROR",
+        "post_state": "multi.campus.edu. A rrset remains present with 192.0.2.50 and 192.0.2.51."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the UPDATE because the targeted RR is not a member of the rrset, despite rrset existence being satisfied.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "multi.campus.edu. A rrset remains present with 192.0.2.50 and 192.0.2.51."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.2.3 evaluates prerequisites at the rrset level, and §3.4.2 defines delete semantics, but it does not clearly specify the result when delete_rr names a specific RR that is absent while the rrset itself exists. That leaves room for either accepting the UPDATE as a no-op or rejecting it with an rrset-style error such as NXRRSET.",
+    "test_rationale": "This test creates a multi-RR A rrset so the rrset_exists prerequisite can pass while still targeting a deliberately absent A record with delete_rr. The update is therefore on the exact underspecified edge: the server must decide whether RR-level deletion of a non-member is harmless or an error. A follow-up QUERY on the same name confirms that the visible zone state stays unchanged, making the binary difference come from the UPDATE reply code and, depending on implementation, any semantic rejection policy.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

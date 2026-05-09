@@ -1,0 +1,41 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_rrset_absent_type",
+  "Notes": "Prerequisites succeed, then UPDATE deletes an RRset type absent at the target name. Query verifies the helper owner remains unchanged regardless of UPDATE reply.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Satisfy a prerequisite at emptytype.campus.edu., then delete the absent TXT RRset at that owner.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "emptytype.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "emptytype.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "emptytype.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe that the pre-existing A RRset remains present after the UPDATE, regardless of whether the server returned NOERROR or NXRRSET."
+    }
+  ]
+}

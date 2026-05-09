@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Idempotent replay of a successful add_rr",
+  "test_rationale": "This test isolates the protocol gap around duplicate UPDATE replays by starting with an already-present A RRset and issuing a single authenticated-less UPDATE that first confirms rrset_exists and then adds the exact same RR again. RFC 2181 prefers suppression of duplicate RRs, but RFC 2136 does not say whether the server must return success or an error when the update is a semantic no-op. A follow-up QUERY of the touched name provides a stable post-state check while the primary oracle is the UPDATE reply code, making the test suitable for distinguishing servers that silently accept the replay from those that reject it as a duplicate conflict.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat the identical add_rr as a successful no-op under duplicate suppression, returning NOERROR and leaving the RRset unchanged.",
+        "reply_rcode": "NOERROR",
+        "post_state": "replay.campus.edu. remains as a single A RRset containing 192.0.2.70."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treat the identical add_rr as a conflicting duplicate update and reject it, e.g. with YXRRSET.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "replay.campus.edu. remains as a single A RRset containing 192.0.2.70."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.2 and §3.4.2 define add_rr semantics and prerequisite handling, but do not specify whether replaying an identical add_rr against an already-present RRset must be accepted as a no-op or rejected as a conflict. RFC 2181 §5 says duplicates are meaningless and should be suppressed, but it does not bind UPDATE RCODE behavior, so implementations may diverge on the wire even though the resulting RRset is unchanged."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

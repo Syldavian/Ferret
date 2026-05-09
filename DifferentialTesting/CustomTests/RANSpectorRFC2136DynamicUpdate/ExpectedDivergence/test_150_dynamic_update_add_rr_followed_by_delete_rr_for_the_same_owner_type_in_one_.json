@@ -1,0 +1,41 @@
+{
+  "scenario_title": "add_rr followed by delete_rr for the same owner/type in one UPDATE",
+  "test_rationale": "This test isolates the underspecified ordering/cancellation behavior in a single RFC 2136 UPDATE: the same A record is added and then deleted before the message ends. If a server simulates the operations sequentially, the final zone state is empty for that name; if it coalesces the change set, it may also end up empty but with a different internal/response path; if it treats the sequence as contradictory, it may return an error such as NXRRSET. A follow-up query for the touched name makes the final state observable.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Applies UPDATE operations sequentially or as a net no-op and returns success; the RR is absent afterward.",
+        "reply_rcode": "NOERROR",
+        "post_state": "NXDOMAIN or NODATA for y.campus.edu. A"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects or otherwise treats the intra-message add-then-delete of the same RR as contradictory, producing a different UPDATE result and/or leaving different state.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "RRset absent for y.campus.edu. A"
+      }
+    },
+    "why_divergence": "RFC 2136 defines add_rr and delete_rr primitives, but does not specify whether the UPDATE section is processed strictly in message order, batched as a set of net modifications, or rejected when the same RR is both added and removed within one packet. That leaves both the reply code and the resulting zone state underspecified."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

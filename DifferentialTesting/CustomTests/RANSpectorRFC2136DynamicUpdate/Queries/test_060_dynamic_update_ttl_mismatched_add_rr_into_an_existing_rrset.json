@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "ttl_mismatched_add_rr",
+  "Notes": "Existing RRset has t.campus.edu. A 192.0.2.80 with TTL 300. UPDATE adds a second A RR for the same owner with TTL 5, testing whether the server accepts and normalizes, accepts and preserves, or rejects due to TTL mismatch.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add an A RR to an existing RRset with a different TTL than the preexisting member.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "t.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "t.campus.edu. 5 IN A 192.0.2.81"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "t.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the new RR is present in the RRset after the UPDATE, regardless of TTL normalization."
+    }
+  ]
+}

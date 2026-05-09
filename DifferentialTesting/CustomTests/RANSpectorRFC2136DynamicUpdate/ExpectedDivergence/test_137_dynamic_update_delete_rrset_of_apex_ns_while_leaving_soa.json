@@ -1,0 +1,41 @@
+{
+  "scenario_title": "delete_rrset of apex NS while leaving SOA",
+  "test_rationale": "This case isolates the underspecified point from RFC 2136/2181: an UPDATE that deletes only the apex NS rrset, not the SOA, using a minimal zone where the apex is otherwise ordinary. The follow-up QUERYs for apex NS and SOA make the post-state observable and distinguish a server that permits the removal from one that rejects or repairs it. Because the update is a single delete_rrset operation and all traffic is UDP with no authentication, it fits Ferret's DynamicUpdate constraints while directly exercising the semantic gap.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the apex NS RRset deletion and leaves the zone with SOA present but NS absent at the apex, or otherwise reflects the deletion in post-state.",
+        "reply_rcode": "NOERROR",
+        "post_state": "Apex NS rrset absent; apex SOA rrset present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the update or otherwise prevents removal of the mandatory apex NS RRset.",
+        "reply_rcode": "REFUSED",
+        "post_state": "Apex NS rrset remains present; apex SOA rrset present."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.4 defines delete_rrset generically and does not specify special handling for deleting the apex NS RRset while leaving SOA intact. RFC 2181 §6.1 says SOA and NS are mandatory at the apex, but it does not prescribe dynamic-update semantics or the exact error code when an update attempts to remove only NS. Implementations can therefore differ on whether to allow the deletion, reject it, or preserve the rrset silently."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

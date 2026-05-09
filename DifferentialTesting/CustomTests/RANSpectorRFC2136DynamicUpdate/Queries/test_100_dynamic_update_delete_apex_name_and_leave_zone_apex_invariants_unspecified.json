@@ -1,0 +1,59 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "apex_delete_name_underspec",
+  "Notes": "Delete the zone apex by name after establishing that the apex exists. The zone includes an extra apex TXT RR so a server that treats delete_name at the apex as a blanket deletion can differ from one that preserves mandatory SOA/NS or rejects the update.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to delete the zone apex name via delete_name after a prerequisite that the apex name is in use.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_name",
+          "Name": "campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "SOA",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the apex SOA remains and whether the UPDATE was applied or rejected."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "NS",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the apex NS rrset remains and whether the UPDATE was applied or rejected."
+    },
+    {
+      "Id": "q3",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the extra apex TXT RR was removed, leaving a post-state distinction."
+    }
+  ]
+}

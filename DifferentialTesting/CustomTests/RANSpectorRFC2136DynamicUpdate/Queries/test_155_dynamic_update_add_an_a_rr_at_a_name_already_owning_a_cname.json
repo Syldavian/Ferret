@@ -1,0 +1,50 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_cohabitation_conflict",
+  "Notes": "Probe how UPDATE processing handles adding an A RR at an owner that already has a CNAME.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add an A RR at x.campus.edu., which already owns a CNAME in the initial zone.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "x.campus.edu.",
+          "Type": "CNAME"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "x.campus.edu. 500 IN A 192.0.2.33"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "x.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A was added, ignored, or the CNAME was removed."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "x.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the original CNAME remains after the UPDATE."
+    }
+  ]
+}

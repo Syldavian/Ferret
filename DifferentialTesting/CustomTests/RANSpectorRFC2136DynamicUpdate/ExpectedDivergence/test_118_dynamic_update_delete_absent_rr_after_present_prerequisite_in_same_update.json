@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Delete absent RR after present prerequisite in same UPDATE",
+  "test_rationale": "This test isolates the gap between prerequisite truth and exact-RR deletion semantics. The zone starts with h.campus.edu. A 192.0.2.70, so rrset_exists on h.campus.edu. A is satisfied. The subsequent delete_rr targets h.campus.edu. A 192.0.2.71, which is not a member of the RRset. RFC 2136 does not clearly require a particular RCODE or mandate whether the server must treat the operation as a no-op versus a semantic error, so bind and knot can legitimately diverge on the UPDATE reply while leaving the zone unchanged or handling the delete benignly.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat the absent exact RR delete as a benign no-op after the prerequisite succeeds.",
+        "reply_rcode": "NOERROR",
+        "post_state": "h.campus.edu. still has A 192.0.2.70 only."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the UPDATE as a semantic failure when the specific RR to delete is not present.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "h.campus.edu. remains unchanged with A 192.0.2.70 only."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.1 and §3.4.2 define prerequisite handling and UPDATE processing, but §3.4.2.2 does not precisely specify the required outcome when delete_rr names an RR that is absent from an RRset that already satisfied a prerequisite. As a result, implementations may either ignore the absent RR and succeed or fail the UPDATE with NXRRSET/SERVFAIL, making both reply code and processor behavior under-specified."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

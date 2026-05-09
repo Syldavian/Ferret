@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Replaying an idempotent delete_rr on absent data",
+  "test_rationale": "This test isolates the underspecified replay semantics of delete_rr by targeting a TXT RR that is absent from the start while keeping the enclosing name present, making the UPDATE syntactically valid and prerequisite-safe. The only meaningful observation is the UPDATE reply code, since the follow-up query should confirm the same empty TXT RRset in all cases. That makes the scenario a clean reply-only divergence probe for client retry behavior.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats replayed delete_rr of absent data as an idempotent no-op and returns success.",
+        "reply_rcode": "NOERROR",
+        "post_state": "No TXT RRset at retry.campus.edu.; the zone is unchanged."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats deletion of already-absent data as a semantic failure for the UPDATE.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "No TXT RRset at retry.campus.edu.; the zone is unchanged."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2.8 defines delete_rr as removing a specific RR, but it does not state what status to return when the RR is already absent. The atomic UPDATE model also does not force a unique outcome for a replayed no-op delete, so implementations may diverge on whether they report success or NXRRSET-like failure."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

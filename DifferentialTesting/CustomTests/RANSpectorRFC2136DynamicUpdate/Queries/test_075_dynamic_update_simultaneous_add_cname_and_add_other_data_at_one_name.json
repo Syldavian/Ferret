@@ -1,0 +1,63 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_exclusivity_update_conflict",
+  "Notes": "Single UPDATE attempts to add a CNAME and an A RR at the same owner name in the same message. The zone starts with alias.campus.edu. already having A data so the UPDATE can expose whether the server rejects the packet, applies one prerequisite-dependent change only, or normalizes the resulting node.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add a CNAME and an A RR at alias.campus.edu. in the same UPDATE message.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "alias.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "alias.campus.edu. 500 IN CNAME target.campus.edu."
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "alias.campus.edu. 500 IN A 192.0.2.41"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "alias.campus.edu.",
+      "Type": "ANY",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe which RRset, if any, remains at the conflicted owner name."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "alias.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Check whether A data survives after the UPDATE."
+    },
+    {
+      "Id": "q3",
+      "Kind": "QUERY",
+      "Name": "alias.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Check whether the CNAME survives after the UPDATE."
+    }
+  ]
+}

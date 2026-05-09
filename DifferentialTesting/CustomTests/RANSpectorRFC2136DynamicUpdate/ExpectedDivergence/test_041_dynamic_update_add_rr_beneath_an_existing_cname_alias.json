@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add RR beneath an existing CNAME alias",
+  "test_rationale": "This test sets up a name that is already in the CNAME-only state and then performs a single syntactically valid UPDATE that adds an A RR at that same owner name. The protocol gap is whether the server must reject the update, and if so with which code, or whether it may accept/transform the change. The follow-up QUERYs check both the CNAME rrset and the A rrset so the runner can observe whether the zone remained unchanged or the conflicting data was applied.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the UPDATE as a semantic conflict with the existing CNAME, commonly with YXRRSET or REFUSED, leaving the CNAME-only state unchanged.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "alias.campus.edu. continues to answer with the original CNAME rrset; no A rrset is present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the UPDATE with REFUSED, or otherwise not apply the conflicting add; the CNAME-only state remains unchanged.",
+        "reply_rcode": "REFUSED",
+        "post_state": "alias.campus.edu. continues to answer with the original CNAME rrset; no A rrset is present."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1/§10.1.1 requires CNAME exclusivity, but RFC 2136 §3.4.2 does not specify the UPDATE-time RCODE or whether an attempted add_rr of a non-CNAME type at an existing CNAME owner must be atomically rejected versus handled in some server-defined way. That leaves the failure mode and exact response code underspecified."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

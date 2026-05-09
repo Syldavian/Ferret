@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add RR at a name that already owns a CNAME",
+  "test_rationale": "This test creates a live CNAME owner and then issues a single UPDATE that merely verifies the name exists before adding an A RR at that same owner. The protocol gap is whether the server rejects the update, silently ignores it, or accepts it in a way that violates or changes the CNAME-only state. A follow-up ANY query on the affected owner makes any reply/state difference observable and keeps the scenario Ferret-executable.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects the UPDATE that would place an A RR alongside an existing CNAME, typically preserving the original CNAME-only state.",
+        "reply_rcode": "REFUSED",
+        "post_state": "QUERY ANY alias.campus.edu. returns only the CNAME rrset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Processes the UPDATE differently under the underspecified conflict, potentially accepting the A addition or returning a different failure code.",
+        "reply_rcode": "NOERROR",
+        "post_state": "QUERY ANY alias.campus.edu. may show both CNAME and A, or a changed owner-state compared with BIND."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 requires that a CNAME owner name have no other data, but RFC 2136 §3.4.2 does not precisely specify the result when an UPDATE syntactically adds a non-CNAME RR at such an owner under a prerequisite that only proves the name exists. That leaves both the UPDATE RCODE and the post-update owner state underspecified."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

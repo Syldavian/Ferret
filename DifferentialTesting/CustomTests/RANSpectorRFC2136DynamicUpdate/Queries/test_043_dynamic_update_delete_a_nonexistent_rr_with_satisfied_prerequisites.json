@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_nonexistent_rr_with_satisfied_prereq",
+  "Notes": "Prerequisite establishes rrset_exists for n.campus.edu. A, then the UPDATE attempts delete_rr for a different A RR at the same owner name that is not present. The query checks whether the surviving A RRset remains unchanged after the UPDATE and allows observation of reply-vs-post-state divergence.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete a nonexistent A RR from an existing A RRset after a satisfied rrset_exists prerequisite.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "n.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "n.campus.edu. 500 IN A 192.0.2.71"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "n.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the existing A RRset remains unchanged after the UPDATE."
+    }
+  ]
+}

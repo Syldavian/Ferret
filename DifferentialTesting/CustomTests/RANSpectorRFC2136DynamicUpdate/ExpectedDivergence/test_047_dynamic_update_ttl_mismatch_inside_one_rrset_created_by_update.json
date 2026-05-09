@@ -1,0 +1,41 @@
+{
+  "scenario_title": "TTL mismatch inside one RRset created by UPDATE",
+  "test_rationale": "This scenario isolates the underspecified point by creating a new RRset in a single UPDATE with two A additions that disagree only in TTL. Because the RRset is absent beforehand, the mismatch arises entirely during UPDATE processing rather than from preexisting data. A follow-up QUERY can distinguish acceptance with normalization from rejection, making the divergence observable in both the reply and the resulting zone state.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accept the UPDATE and coerce the mixed TTLs to a single server-chosen TTL for the resulting RRset.",
+        "reply_rcode": "NOERROR",
+        "post_state": "ttl.campus.edu. exists as an A RRset with both A RDATA present; QUERY returns answers for both records."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the UPDATE because it would create an RRset with unequal TTLs.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "ttl.campus.edu. remains absent; QUERY returns no A answers."
+      }
+    },
+    "why_divergence": "RFC 2181 §5.2 requires that members of an RRset have identical TTLs, but RFC 2136 does not specify how an UPDATE should behave when it creates an RRset with mixed TTLs entirely within one message. A server may normalize the TTLs and accept the update, or reject it as a server-side error, yielding divergent reply codes and post-update state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

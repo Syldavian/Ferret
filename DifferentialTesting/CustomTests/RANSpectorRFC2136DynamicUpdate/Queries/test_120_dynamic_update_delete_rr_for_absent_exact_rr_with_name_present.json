@@ -1,0 +1,39 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_absent_exact_rr",
+  "Notes": "Owner name exists with a singleton A RRset. The UPDATE deletes a different exact A RR, leaving the owner name present if the delete is treated as a no-op. This exposes whether the server returns success or an error for absent exact-RR deletion.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete an exact A RR that is not present, while the owner name exists and prerequisites assert the name is in use.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "j.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "j.campus.edu. 500 IN A 192.0.2.81"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "j.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the original A RRset remains present after the UPDATE."
+    }
+  ]
+}

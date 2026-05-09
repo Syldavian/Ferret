@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Delete the last RR under a name that still exists",
+  "test_rationale": "The zone starts with a single A RR at lone.campus.edu., so a single delete_rr operation removes the last and only RR at that name. RFC 2136 clearly allows deleting an RR, but it does not define whether the empty node should persist or whether the name should be collapsed away. By querying the same name afterward with both A and ANY, the test exposes the boundary between NODATA on an existing empty node and NXDOMAIN for a non-existent name, which is the protocol gap under examination.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "post_state_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Delete the last RR but preserve the name as an existing empty node; subsequent queries return NODATA/NOERROR with no A RRset rather than NXDOMAIN.",
+        "reply_rcode": "NOERROR",
+        "post_state": "lone.campus.edu. exists with no associated RRs; QUERY A and ANY yield NOERROR/NODATA."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Delete the last RR and collapse the node so the name is treated as absent; subsequent queries return NXDOMAIN.",
+        "reply_rcode": "NOERROR",
+        "post_state": "lone.campus.edu. is removed; QUERY A and ANY yield NXDOMAIN."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 distinguishes a name that exists with no RRs from a name that does not exist, but RFC 2136 §3.4.2 does not precisely specify whether delete_rr of the last RR must leave an empty node or remove the node. That leaves the post-update name existence and QUERY result undefined."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

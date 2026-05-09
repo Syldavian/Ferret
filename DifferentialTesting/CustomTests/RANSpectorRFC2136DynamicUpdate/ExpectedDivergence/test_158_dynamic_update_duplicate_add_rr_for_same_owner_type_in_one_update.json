@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Duplicate add_rr for same owner/type in one UPDATE",
+  "test_rationale": "This test isolates a single underspecified case: one UPDATE message contains two identical add_rr operations for the same owner, class, type, and RDATA. Because RFC 2136 does not define duplicate-elimination or error handling for repeated additions within the same UPDATE, servers may either accept the message as redundant and leave one RRset in place, or reject it as a semantic conflict. A follow-up QUERY on the touched name makes any difference in acceptance and post-state observable.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat duplicate add_rr as harmless redundancy; accept the UPDATE and create a single A RRset at dup.campus.edu.",
+        "reply_rcode": "NOERROR",
+        "post_state": "dup.campus.edu. exists with A 192.0.2.11"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the UPDATE as semantically invalid or conflicting when the same add_rr appears twice in one message.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "dup.campus.edu. remains absent"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 says an add section adds all RRs in the section, but it does not specify whether duplicate identical additions in the same UPDATE are collapsed, ignored, or treated as a conflict. RFC 2181 §5.2 defines RRset semantics, not UPDATE processing for duplicate add_rrs, so implementations may reasonably differ on both the reply code and whether the name is created."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

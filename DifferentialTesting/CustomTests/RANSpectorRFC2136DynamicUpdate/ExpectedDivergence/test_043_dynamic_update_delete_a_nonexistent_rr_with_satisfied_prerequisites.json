@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Delete a nonexistent RR with satisfied prerequisites",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat the absent exact RR in delete_rr as a no-op once the prerequisite rrset_exists succeeds; return success and leave the surviving RRset intact.",
+        "reply_rcode": "NOERROR",
+        "post_state": "n.campus.edu. retains A 192.0.2.70"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Fail the UPDATE when the exact RR to delete is absent even though the enclosing rrset exists; the existing RRset is left unchanged because the update is rejected.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "n.campus.edu. retains A 192.0.2.70"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 and §3.4.2.6 define delete_rr syntax and the prerequisite/update split, but do not state whether deleting a specific RR that is absent from an existing RRset should succeed as a no-op or fail with NXRRSET once rrset_exists has already passed. RFC 2181 §5 clarifies RRset semantics, but not the exact UPDATE error mapping for this case.",
+    "test_rationale": "The zone contains exactly one A RR at n.campus.edu. The UPDATE first proves the RRset exists, then issues delete_rr for a different A RR at the same owner name. This isolates the underspecified question of whether the server treats deletion of a nonexistent RR as success or as an RRset-level semantic error, while the follow-up QUERY confirms the surviving A RR remains in place either way.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

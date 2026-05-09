@@ -1,0 +1,50 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_absent_rr_after_prereq",
+  "Notes": "Prerequisite asserts existence of an unrelated TXT RRset, then UPDATE deletes one exact TXT RR that is absent; follow-up queries check whether the absent name remains absent and whether the UPDATE was accepted or rejected.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Assert that ok.campus.edu. has a TXT rrset, then attempt to delete one exact TXT RR at rr.campus.edu. that is not present in the zone.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "ok.campus.edu.",
+          "Type": "TXT"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "rr.campus.edu. 300 IN TXT \"gone\""
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "rr.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the absent TXT rrset remains absent after the UPDATE."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "ok.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Sanity-check that the prerequisite RRset remains present or to expose rollback if the server rejects the UPDATE."
+    }
+  ]
+}

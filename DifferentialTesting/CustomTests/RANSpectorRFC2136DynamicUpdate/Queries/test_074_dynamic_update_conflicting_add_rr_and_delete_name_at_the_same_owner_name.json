@@ -1,0 +1,48 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "conflicting_add_and_delete_name",
+  "Notes": "Single UPDATE adds an A RR at host2.campus.edu. and also deletes the entire host2.campus.edu. name in the same message, with no prerequisites, to probe whether delete_name dominates, the add is resurrected, or the packet is rejected.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Conflicting same-owner operations: add an A RR at host2.campus.edu. and delete the entire host2.campus.edu. name in the same UPDATE.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "host2.campus.edu. 500 IN A 192.0.2.30"
+        },
+        {
+          "Kind": "delete_name",
+          "Name": "host2.campus.edu."
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host2.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether host2.campus.edu. survives with the added A RR, is removed entirely, or yields an error state."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "host2.campus.edu.",
+      "Type": "ANY",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the full post-update name state for host2.campus.edu. after the conflicting UPDATE."
+    }
+  ]
+}

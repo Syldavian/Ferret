@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Duplicate add_rr of an identical RR in one UPDATE",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Coalesces identical adds or treats the second identical add as an idempotent no-op, accepting the UPDATE.",
+        "reply_rcode": "NOERROR",
+        "post_state": "d.campus.edu. exists with A 192.0.2.20 present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Processes the two add_rr operations sequentially and treats the second identical add as erroneous once the RR is already present, or otherwise rejects the UPDATE.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "d.campus.edu. absent or unchanged from pre-update state."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines add_rr semantics but does not say whether duplicate identical add_rr entries inside a single UPDATE must be merged before application or may be evaluated sequentially. RFC 2181 §5.2 clarifies RRset membership semantics, but not intra-message deduplication. As a result, implementations may differ on whether the second identical add is ignored, accepted as redundant, or rejected after the first creates the RRset member.",
+    "test_rationale": "This UPDATE isolates the underspecified case by sending two syntactically valid, identical add_rr operations for the same owner/type/class/rdata in one message. A server that deduplicates or treats repeated identical adds as idempotent should return NOERROR and leave d.campus.edu. with the A record, while a server that applies operations sequentially and checks membership after each add may reject the second operation and leave the post-state unchanged. The follow-up QUERY makes both the reply code and the resulting RRset observable as a binary oracle.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

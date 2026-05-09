@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add CNAME then delete the competing data at the same owner",
+  "test_rationale": "This test sets up an existing A rrset at clash.campus.edu. and then sends one UPDATE that both removes that A rrset and adds a CNAME at the same owner. The only legal end state is CNAME-only, but RFC 2136 does not say whether dynamic update must honor the message as an ordered sequence or as a single combined change. That makes the update a good probe for implementation differences in intra-message ordering, with the follow-up QUERY confirming whether the zone ended in the legal CNAME-only state or retained/rejected the change.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Applies the delete-then-add effect or otherwise accepts the combined update, ending with only the CNAME at clash.campus.edu.",
+        "reply_rcode": "NOERROR",
+        "post_state": "clash.campus.edu. has CNAME target.campus.edu. and no A rrset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the same-message combination as conflicting or processes it conservatively, refusing to create the CNAME when a competing rrset was present in the update.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "clash.campus.edu. remains with the original A rrset and no CNAME."
+      }
+    },
+    "why_divergence": "RFC 2136 §3 and §7.2 define the update semantics and prerequisite checks, but they do not specify whether operations in the Update Section are processed strictly in order or as an atomic net effect. RFC 2181 §10.1 constrains the final legal coexistence of RR types at an owner name, yet it does not resolve intra-message sequencing when an UPDATE both removes the competing A rrset and adds a CNAME at the same owner. As a result, implementations can diverge on whether to accept the message with NOERROR and a CNAME-only final state, or reject it with YXRRSET/SERVFAIL when they treat the combination as conflicting."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

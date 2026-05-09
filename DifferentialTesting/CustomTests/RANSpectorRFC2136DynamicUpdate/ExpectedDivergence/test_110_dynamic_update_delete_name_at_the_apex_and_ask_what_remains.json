@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Delete name at the apex and ask what remains",
+  "test_rationale": "This test sends a single dynamic update that deletes the apex name of the authoritative zone itself, which is the edge case left open by RFC 2136. Because the origin must retain SOA and NS per RFC 2181, implementations may diverge on whether to refuse the update or process it in a way that preserves or alters the apex rrsets. Querying the apex SOA and NS after the UPDATE provides an observable post-state oracle alongside the UPDATE reply code.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the apex delete_name update because the origin must retain mandatory SOA and NS rrsets, returning a failure RCODE and leaving the zone unchanged.",
+        "reply_rcode": "REFUSED",
+        "post_state": "campus.edu. retains SOA and NS rrsets."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept the syntactically valid delete_name at the origin, returning success and either preserving mandatory rrsets or exposing a different post-update apex state.",
+        "reply_rcode": "NOERROR",
+        "post_state": "Apex post-state differs from the refusal case; SOA/NS query results after the UPDATE distinguish the behavior."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines delete_name syntax but does not specify the exact server-state transition when the target is the zone apex. RFC 2181 §6.1 says SOA and NS are mandatory at the zone origin, but it does not prescribe the response code or partial-apply rule for an apex delete_name. Implementations may therefore disagree on whether to refuse the UPDATE or accept it and what remains observable at the apex."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

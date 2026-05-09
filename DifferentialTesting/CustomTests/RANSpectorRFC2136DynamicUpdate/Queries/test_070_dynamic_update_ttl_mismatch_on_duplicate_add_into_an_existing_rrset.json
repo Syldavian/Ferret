@@ -1,0 +1,43 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "ttl_mismatch_duplicate_add",
+  "Notes": "An UPDATE attempts to add an RR identical to an existing A RRset except for TTL. RFC 2136/2181 do not define whether the server should accept and normalize TTL, reject the update, or otherwise alter the RRset.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add a duplicate A RR for host1.campus.edu. with the same owner/type/class/RDATA as the existing RRset but a different TTL.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "host1.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "host1.campus.edu. 300 IN A 192.0.2.10"
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "host1.campus.edu. 60 IN A 192.0.2.10"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host1.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": false,
+      "Description": "Observe the post-update A RRset and its TTL handling."
+    }
+  ]
+}

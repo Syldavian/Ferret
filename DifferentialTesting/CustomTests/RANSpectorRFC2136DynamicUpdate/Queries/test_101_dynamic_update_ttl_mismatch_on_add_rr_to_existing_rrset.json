@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "ttl_mismatch_on_add_rr",
+  "Notes": "Add an A RR to an existing RRset using a different TTL than the pre-existing member; observe whether the server rejects the update, normalizes TTLs, or preserves divergent TTL handling internally.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Prereq asserts the A RRset exists at ttl.campus.edu.; add a second A record for the same owner name with a different TTL.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "ttl.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "ttl.campus.edu. 600 IN A 192.0.2.61"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "ttl.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the post-update A RRset at ttl.campus.edu. to detect acceptance vs rejection and any normalization of the added RR."
+    }
+  ]
+}

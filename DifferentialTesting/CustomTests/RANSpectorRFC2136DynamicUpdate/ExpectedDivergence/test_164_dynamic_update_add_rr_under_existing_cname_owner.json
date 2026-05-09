@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Add RR under existing CNAME owner",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects the update when the add_rr would violate CNAME exclusivity, typically leaving the CNAME-only state intact.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "QUERY alias.campus.edu. A returns no A rrset; QUERY alias.campus.edu. CNAME still returns target.campus.edu."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accepts or otherwise processes the update differently, potentially replacing the CNAME or allowing an illegal mixed state.",
+        "reply_rcode": "NOERROR",
+        "post_state": "QUERY alias.campus.edu. A returns 192.0.2.40 and CNAME may be absent or still present depending on implementation."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 and §5.2.2 require that a node with a CNAME not have other data, but RFC 2136 §3.4.2 does not specify the exact UPDATE failure mode or state transition when add_rr targets such a node. Implementations may therefore disagree on whether to reject the UPDATE with YXRRSET/SERVFAIL or accept it and alter the existing CNAME state.",
+    "test_rationale": "The zone starts with alias.campus.edu. as a pure CNAME owner. The single UPDATE tries to add an A RR at that same owner, which is wire-valid but semantically conflicts with CNAME exclusivity. The follow-up A and CNAME queries make the outcome observable: either the server rejects the change and preserves the CNAME-only state, or it accepts the change and exposes a different post-state, including a possible illegal mixed node.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

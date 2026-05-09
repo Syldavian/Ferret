@@ -1,0 +1,43 @@
+{
+  "scenario_title": "add_rr to a name that currently owns a CNAME",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the UPDATE because the target name already owns a CNAME, leaving the zone unchanged.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "alias.campus.edu. remains a CNAME to target.campus.edu.; no A RRset is present at alias.campus.edu."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept the UPDATE with NOERROR but normalize the zone by preserving the CNAME and ignoring the new A, or otherwise make the result appear unchanged on follow-up queries.",
+        "reply_rcode": "NOERROR",
+        "post_state": "alias.campus.edu. remains a CNAME to target.campus.edu.; no A RRset is present at alias.campus.edu."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 states that a CNAME owner must not have other data, but RFC 2136 does not specify a required UPDATE error or normalization rule when an add_rr violates that invariant. As a result, implementations may reject the UPDATE (e.g. YXRRSET) or accept it while preserving the CNAME and ignoring the new A RR, making both reply code and resulting state underspecified.",
+    "test_rationale": "This scenario creates a live RFC 2136 UPDATE ambiguity by adding an A record directly to a name that already owns a CNAME. The zone is otherwise minimal and valid, and the follow-up queries to the CNAME and A RRsets at the touched name make it possible to observe whether the server rejected the update or accepted it while leaving the CNAME-only state intact.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

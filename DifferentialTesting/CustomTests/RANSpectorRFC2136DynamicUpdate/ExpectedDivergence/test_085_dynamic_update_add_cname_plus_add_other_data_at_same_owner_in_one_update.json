@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add CNAME plus add other data at same owner in one UPDATE",
+  "test_rationale": "This scenario creates a single RFC 2136 UPDATE that is internally contradictory under RFC 2181's CNAME exclusivity rule: it adds a CNAME and an A RR at the same owner name in one message. The protocol text does not specify whether the server must reject the whole update, partially apply it, or evaluate the conflict only against the pre-existing zone state. By querying both the CNAME and A RRsets at the touched owner after the UPDATE, Ferret can observe any difference in acceptance semantics and resulting zone content between BIND and Knot.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects the contradictory UPDATE when it sees CNAME and A added at the same owner, returning a failure RCODE.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "No alias1.campus.edu. CNAME and no alias1.campus.edu. A are present after the UPDATE."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Processes the message more permissively or with different internal ordering, resulting in a different reply and/or one surviving RRset at the owner.",
+        "reply_rcode": "REFUSED",
+        "post_state": "Either the CNAME or the A RRset may remain at alias1.campus.edu., depending on server handling."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 forbids coexisting data with a CNAME, but RFC 2136 does not define whether that exclusivity check is applied per operation, after the whole UPDATE is assembled, or only against pre-update state. A single UPDATE carrying both add_rr(CNAME) and add_rr(A) at the same owner is therefore underspecified, so different servers can legitimately choose different failure codes and/or post-update content."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

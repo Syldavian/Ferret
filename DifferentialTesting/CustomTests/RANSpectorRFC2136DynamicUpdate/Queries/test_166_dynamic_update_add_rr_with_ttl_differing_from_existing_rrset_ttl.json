@@ -1,0 +1,43 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "ttl_mismatch_rrset_add",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to add an A RR that is identical in owner/type/class/RDATA to an existing RRset member but uses a different TTL.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "ttl.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "ttl.campus.edu. 300 IN A 192.0.2.42"
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "ttl.campus.edu. 600 IN A 192.0.2.42"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "ttl.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RRset was kept, normalized, or changed after the UPDATE."
+    }
+  ]
+}

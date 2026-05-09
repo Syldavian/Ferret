@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Conflicting add_rr and delete_name at the same owner name",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Applies delete_name as dominating the same-message add, or otherwise rejects the internally conflicting UPDATE.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host2.campus.edu. absent"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the add_rr as recreating the owner name after delete_name, or evaluates the message differently and preserves the added RR.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host2.campus.edu. has A 192.0.2.30"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines delete_name, but does not specify how it composes with same-message additions at the same owner name. RFC 2181 §10.1 describes name existence states, not intra-UPDATE transition semantics. As a result, implementations may differ on whether delete_name wipes out same-owner additions, whether later adds resurrect the name, or whether the packet is internally contradictory.",
+    "test_rationale": "This test isolates a single owner name with one existing A RR, then sends one UPDATE containing both an add_rr for that same owner and a delete_name for the owner. Because the protocol does not define ordering or dominance between these operations, BIND and Knot may diverge either in the UPDATE reply or in the final state visible to subsequent queries. The follow-up A and ANY queries provide a binary oracle on whether the name was deleted or revived.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

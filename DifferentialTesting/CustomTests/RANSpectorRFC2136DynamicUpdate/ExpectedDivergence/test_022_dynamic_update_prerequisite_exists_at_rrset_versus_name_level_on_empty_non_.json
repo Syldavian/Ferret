@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Prerequisite exists at RRset versus name level on empty non-terminal",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats the empty non-terminal as a name in use, so the prerequisites pass and the TXT RRset is added.",
+        "reply_rcode": "NOERROR",
+        "post_state": "QUERY mid.campus.edu. TXT returns the newly added TXT RRset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the empty non-terminal as not satisfying the name-level prerequisite, or maps the mismatch to a prerequisite failure.",
+        "reply_rcode": "NXDOMAIN",
+        "post_state": "QUERY mid.campus.edu. TXT returns no TXT RRset."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.1 defines name-level and RRset-level prerequisites, but it does not precisely specify whether an empty non-terminal counts as \"in use\" for name_in_use / name_absent, nor how that should reconcile with rrset_absent on the same name. RFC 2181 §5.2 discusses name/data semantics but does not resolve UPDATE prerequisite evaluation for empty non-terminals, so implementations may legitimately diverge on whether the UPDATE succeeds.",
+    "test_rationale": "The zone contains only a descendant RR under mid.campus.edu., making mid.campus.edu. an empty non-terminal. The single UPDATE simultaneously asserts a name-level existence condition and an RRset-level absence condition at that empty non-terminal, then attempts to create a TXT RRset there. This directly probes the underspecified mapping between name existence and RRset existence in RFC 2136 and should produce either different UPDATE rcodes or a different post-update TXT query result across servers.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

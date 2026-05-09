@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add and delete the same RRset in one UPDATE",
+  "test_rationale": "This scenario is minimal and Ferret-testable: the zone starts with only the required apex SOA/NS and helper NS address, then a single unsigned UDP UPDATE both adds and deletes the same x.campus.edu. A RRset. Because RFC 2136 never defines intra-message ordering or conflict handling for these two primitives, implementations may differ in the UPDATE reply and/or final zone contents. A follow-up QUERY on x.campus.edu. A makes the divergence observable as either presence or absence of the RRset.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Apply UPDATE primitives sequentially or otherwise permit the add to survive, leaving the x.campus.edu. A RRset present after the message.",
+        "reply_rcode": "NOERROR",
+        "post_state": "x.campus.edu. has an A RRset, typically containing 192.0.2.11."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treat the delete_rrset as overriding/conflicting within the same UPDATE or reject the message due to the intra-message conflict.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "x.campus.edu. has no A RRset."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 and §3.4.3 define add and delete_rrset separately, but do not specify any sequencing or conflict-resolution rule when both target the same owner/type in one UPDATE. RFC 2181 §5.2 only defines RRsets as sets, not update ordering semantics, so compliant servers can reasonably differ on whether the add survives, the delete wins, or the message is rejected."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

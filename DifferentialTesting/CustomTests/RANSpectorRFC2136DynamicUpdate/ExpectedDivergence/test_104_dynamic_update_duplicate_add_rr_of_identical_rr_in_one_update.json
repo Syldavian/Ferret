@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Duplicate add_rr of identical RR in one UPDATE",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE as an idempotent add and suppresses the duplicate internally, leaving a single RR in the RRset.",
+        "reply_rcode": "NOERROR",
+        "post_state": "dup.campus.edu. exists with one A RR: 192.0.2.20."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the duplicated add_rrs as conflicting or malformed UPDATE content.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "dup.campus.edu. remains absent."
+      }
+    },
+    "why_divergence": "RFC 2181 §5 says duplicate RRs are meaningless and should be suppressed, but RFC 2136 §3.4.2 does not define whether two identical add_rr operations in a single UPDATE must be collapsed, accepted as an idempotent no-op, or rejected. That leaves server behavior unspecified for both the reply code and the resulting zone contents.",
+    "test_rationale": "The UPDATE deliberately repeats the exact same RR twice, with no prerequisites and no other changes, so the only choice point is how the dynamic-update engine handles duplicate additions in one message. Servers may either de-duplicate and apply one insertion, or treat the duplicated add as a conflict and fail the UPDATE. A follow-up QUERY on the touched name makes the resulting state observable even if both implementations return a success-like reply or both return an error.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

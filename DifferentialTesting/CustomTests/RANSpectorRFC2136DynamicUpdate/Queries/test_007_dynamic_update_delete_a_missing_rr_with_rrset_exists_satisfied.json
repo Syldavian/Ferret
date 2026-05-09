@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_missing_rr_with_rrset_exists",
+  "Notes": "Prerequisite proves rrhost.campus.edu. has an A RRset, then UPDATE attempts to delete a specific absent A RR from that RRset. The follow-up QUERY checks whether the existing RRset remains unchanged.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Prerequisite rrset_exists on rrhost.campus.edu. type A, then delete an exact A RR that is not present in the RRset.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "rrhost.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "rrhost.campus.edu. 500 IN A 192.0.2.51"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "rrhost.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RRset is unchanged after the UPDATE."
+    }
+  ]
+}

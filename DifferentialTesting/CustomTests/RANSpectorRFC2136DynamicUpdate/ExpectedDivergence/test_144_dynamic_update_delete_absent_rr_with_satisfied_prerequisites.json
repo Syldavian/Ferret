@@ -1,0 +1,42 @@
+{
+  "scenario_title": "Delete absent RR with satisfied prerequisites",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat the absent delete_rr as a successful no-op when prerequisites are satisfied.",
+        "reply_rcode": "NOERROR",
+        "post_state": "unchanged"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the UPDATE because the specific TXT RR to delete is absent, even though the prerequisite succeeds.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "unchanged"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.2 and §3.4.2 define delete operations, but do not explicitly specify whether deleting a specific RR that is not present must succeed as a no-op or fail once the prerequisite section has already been satisfied. The zone state is therefore expected to remain unchanged, while implementations may differ only in the UPDATE reply code.",
+    "test_rationale": "This test constructs a minimal zone where absent1.campus.edu. exists via an A RR, so the name_in_use prerequisite is satisfied, but the targeted TXT RR is absent. The UPDATE then issues delete_rr for that absent TXT RR. Since RFC 2136 leaves the processor behavior for this edge case underspecified, different servers may either return NOERROR and do nothing or reject the UPDATE with NXRRSET or SERVFAIL, while the post-state stays the same. The follow-up queries confirm the unchanged rrsets and keep the oracle binary on the reply path.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

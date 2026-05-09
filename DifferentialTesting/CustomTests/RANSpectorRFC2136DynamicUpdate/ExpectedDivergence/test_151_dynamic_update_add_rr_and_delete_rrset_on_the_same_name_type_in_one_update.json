@@ -1,0 +1,41 @@
+{
+  "scenario_title": "add_rr and delete_rrset on the same name/type in one UPDATE",
+  "test_rationale": "This test isolates the underspecified interaction between an add_rr and a delete_rrset for the same owner/type in a single RFC 2136 UPDATE. The zone starts with y.campus.edu. A absent, so the update is syntactically valid and the only question is whether the server processes the add before the delete, the delete before the add, or rejects the conflict. A follow-up QUERY on y.campus.edu. A makes the resulting state observable, yielding a binary oracle between implementations that preserve the added RRset and those that remove it.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE and leaves y.campus.edu. A absent, treating delete_rrset as applying to the message as a whole or to the post-add state.",
+        "reply_rcode": "NOERROR",
+        "post_state": "y.campus.edu. has no A RRset (NXDOMAIN or NODATA depending on server/view behavior)."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accepts the UPDATE and leaves y.campus.edu. A present, treating delete_rrset as operating only on pre-state or allowing the add to survive.",
+        "reply_rcode": "NOERROR",
+        "post_state": "y.campus.edu. A rrset contains y.campus.edu. 500 IN A 192.0.2.22."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.3 defines add_rr and delete_rrset individually, but does not specify the effective ordering when both target the same owner/type in one UPDATE. RFC 2181 §5.1 and §5.4 require RRset coherence but do not resolve whether a just-added RRset can be deleted immediately within the same transaction or whether the delete is evaluated only against pre-update state. Implementations may therefore differ in reply acceptance and final zone contents."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

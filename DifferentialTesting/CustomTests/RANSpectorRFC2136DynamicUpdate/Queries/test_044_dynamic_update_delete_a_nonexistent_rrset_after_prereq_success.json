@@ -1,0 +1,41 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_nonexistent_rrset_prereq_success",
+  "Notes": "Prerequisites are satisfied on an unrelated RRset; the UPDATE then deletes a TXT RRset that is absent at the target name. The wire message is valid, but RFC 2136 does not specify whether the absent RRset deletion must be accepted idempotently or rejected.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Satisfy a prerequisite on an unrelated RRset, then attempt to delete an absent TXT RRset at absent.campus.edu.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "stale.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "absent.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "absent.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the absent TXT RRset remains absent after the UPDATE, regardless of the UPDATE reply code."
+    }
+  ]
+}

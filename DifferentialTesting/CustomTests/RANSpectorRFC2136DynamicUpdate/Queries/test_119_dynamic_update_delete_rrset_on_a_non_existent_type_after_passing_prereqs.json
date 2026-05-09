@@ -1,0 +1,41 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_rrset_absent_type_semantics",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Pass an rrset_exists prerequisite on i.campus.edu. A, then attempt to delete the absent MX rrset at the same owner name.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "i.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "i.campus.edu.",
+          "Type": "MX"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "i.campus.edu.",
+      "Type": "MX",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the MX rrset remains absent and whether the server returned a semantic error or treated the delete as a no-op."
+    }
+  ]
+}

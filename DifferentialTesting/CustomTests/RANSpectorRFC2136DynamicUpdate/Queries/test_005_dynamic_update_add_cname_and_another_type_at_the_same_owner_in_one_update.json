@@ -1,0 +1,53 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_exclusivity_conflict",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "In a single UPDATE, add a CNAME and an A RR at the same owner name, creating a CNAME exclusivity conflict at update time.",
+      "Prerequisites": [
+        {
+          "Kind": "name_absent",
+          "Name": "cname.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "cname.campus.edu. 500 IN CNAME target.campus.edu."
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "cname.campus.edu. 500 IN A 192.0.2.40"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "cname.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the CNAME was created, rejected, or otherwise affected by the conflicting A add in the same transaction."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "cname.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RRset was created alongside the CNAME, or suppressed/rejected."
+    }
+  ]
+}

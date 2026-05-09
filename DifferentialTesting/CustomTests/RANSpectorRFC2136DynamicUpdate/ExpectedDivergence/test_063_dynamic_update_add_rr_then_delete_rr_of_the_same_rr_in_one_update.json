@@ -1,0 +1,43 @@
+{
+  "scenario_title": "add_rr then delete_rr of the same RR in one UPDATE",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Processes the UPDATE sequentially; the add is seen by the later delete, so the message succeeds and leaves no host2.campus.edu. A RRset.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host2.campus.edu. A is absent after the UPDATE."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Normalizes or validates the intra-message delete against pre-update state and rejects the self-canceling pair as an error.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "host2.campus.edu. A remains absent."
+      }
+    },
+    "why_divergence": "RFC 2136 §3 and §3.4 define add_rr and delete_rr semantics, but they do not specify whether operations inside one UPDATE must be applied strictly in order, batched, or normalized before execution. As a result, the delete_rr may or may not see the RR added earlier in the same Update Section, producing divergent reply codes and/or observable final state.",
+    "test_rationale": "This test isolates the underspecified intra-message ordering problem by using one UPDATE that first adds an A RR for host2.campus.edu. and then deletes the exact same RR. If the server applies operations sequentially, the net result is success with no lasting RRset; if it evaluates the delete against the pre-update state or normalizes the message, it can reject the UPDATE with NXRRSET or otherwise handle it differently. A follow-up QUERY on the touched name makes the post-state observable and keeps the oracle binary for Ferret.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

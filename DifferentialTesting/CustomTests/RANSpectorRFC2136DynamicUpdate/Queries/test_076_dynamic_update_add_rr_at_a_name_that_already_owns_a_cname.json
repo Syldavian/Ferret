@@ -1,0 +1,39 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_owner_add_a_conflict",
+  "Notes": "Update asks to add an A RR at a name that already owns a CNAME. The prerequisite only checks that the owner name exists, so the server must choose how to process the semantic CNAME exclusivity conflict.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Prereq: alias.campus.edu. exists. Then attempt to add an A RR at the existing CNAME owner.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "alias.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "alias.campus.edu. 500 IN A 192.0.2.51"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "alias.campus.edu.",
+      "Type": "ANY",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the owner remains CNAME-only or also contains the added A RR."
+    }
+  ]
+}

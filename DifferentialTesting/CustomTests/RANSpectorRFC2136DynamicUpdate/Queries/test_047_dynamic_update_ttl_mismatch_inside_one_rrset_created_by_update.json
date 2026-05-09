@@ -1,0 +1,44 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "mixed_ttl_rrset_update",
+  "Notes": "Create a previously absent A RRset for ttl.campus.edu. using one UPDATE that adds two RRs with different TTLs. Follow-up QUERY observes whether the server normalized, rejected, or preserved the RRset.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add two A records at ttl.campus.edu. in the same UPDATE, but with unequal TTLs (60 and 600). The RRset does not exist beforehand.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_absent",
+          "Name": "ttl.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "ttl.campus.edu. 60 IN A 198.51.100.10"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "ttl.campus.edu. 600 IN A 198.51.100.11"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "ttl.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RRset exists after the UPDATE and whether the server accepted or rejected the mixed-TTL additions."
+    }
+  ]
+}

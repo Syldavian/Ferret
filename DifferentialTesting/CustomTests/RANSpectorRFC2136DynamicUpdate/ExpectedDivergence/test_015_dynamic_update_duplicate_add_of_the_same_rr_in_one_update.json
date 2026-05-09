@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Duplicate add of the same RR in one UPDATE",
+  "test_rationale": "This test isolates the underspecified case where a single UPDATE carries two identical add_rr records for the same TXT RR. The zone is preloaded so the RRset already exists with exactly the same RR, making the duplicate insertion semantically redundant. A set-normalizing implementation can accept the message and leave the RRset unchanged, while another implementation may treat the repeated add as a conflict and return YXRRSET. Querying the name after the UPDATE provides a stable observable for whether the zone state remains the expected single RRset entry.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE as a harmless duplicate insertion and normalizes to a single TXT RR in the rrset.",
+        "reply_rcode": "NOERROR",
+        "post_state": "dup.campus.edu. TXT present as one logical RRset containing \"v\"."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the redundant second add as a conflicting or superfluous operation on an existing RRset.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "dup.campus.edu. TXT remains as initially loaded, with no net change from the UPDATE."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines how RRs are added in UPDATE but does not specify duplicate normalization or whether repeated identical add_rr operations inside one message must be merged or rejected. RFC 2181 §5.1 treats an RRset as a set, but it does not define UPDATE algorithm behavior for redundant insertions. As a result, servers may differ on whether the second identical add is a no-op or an error, producing different replies and potentially different observable post-state handling."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

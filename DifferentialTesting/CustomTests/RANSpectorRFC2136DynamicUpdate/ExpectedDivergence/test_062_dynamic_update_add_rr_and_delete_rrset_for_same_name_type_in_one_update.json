@@ -1,0 +1,43 @@
+{
+  "scenario_title": "add_rr and delete_rrset for same name/type in one UPDATE",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Processes the UPDATE section as an ordered sequence, so the add_rr is applied and then removed by delete_rrset; the server replies NOERROR and the queried RRset is absent afterward.",
+        "reply_rcode": "NOERROR",
+        "post_state": "absent"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the conflicting same-message add/delete combination differently, either rejecting the UPDATE or preserving the RRset; the post-state is not absent.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "present_or_unchanged"
+      }
+    },
+    "why_divergence": "RFC 2136 §3 and §3.4 define add_rr and delete_rrset individually, but do not specify intra-message ordering or normalization when both target the same owner/type in one UPDATE. That leaves both sequential semantics and set-based/conflict semantics plausible, producing different replies and/or final RRset state.",
+    "test_rationale": "This test makes the ambiguity observable with a minimal zone and a single UPDATE. The message first creates host2.campus.edu. A and then deletes the entire same RRset in the same UPDATE. If a server evaluates operations sequentially, the final RRset should be absent with NOERROR. If it instead rejects the conflict or handles updates as non-ordered net changes, the reply and/or final state will differ. The follow-up QUERY on host2.campus.edu. A provides a binary post-state oracle.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

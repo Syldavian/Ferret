@@ -1,0 +1,38 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "duplicate_add_rr",
+  "Notes": "Single UPDATE carries two identical add_rr operations for the same owner/type/class/rdata. The post-update query checks whether the server normalizes duplicate additions into one RR, rejects the message, or exhibits another implementation-specific outcome.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add the same A RR for dup.campus.edu. twice in a single UPDATE, with no prerequisites.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "dup.campus.edu. 500 IN A 192.0.2.20"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "dup.campus.edu. 500 IN A 192.0.2.20"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "dup.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RRset is present as one RR, absent, or otherwise normalized after the duplicate-add UPDATE."
+    }
+  ]
+}

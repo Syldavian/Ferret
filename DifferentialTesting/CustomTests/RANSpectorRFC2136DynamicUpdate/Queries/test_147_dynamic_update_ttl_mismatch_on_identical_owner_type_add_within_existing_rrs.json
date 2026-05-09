@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "ttl_mismatch_rrset_add",
+  "Notes": "Exercise RFC 2136 add_rr into an existing A rrset with a conflicting TTL. The update adds a second A at the same owner/type but with a different TTL than the pre-existing rrset, then queries the name to observe whether the server normalizes, rejects, or otherwise alters rrset state.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add an A RR to ttl1.campus.edu. where an A rrset already exists but the new RR uses a different TTL.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "ttl1.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "ttl1.campus.edu. 600 IN A 192.0.2.81"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "ttl1.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the resulting A rrset and any effect of TTL conflict handling."
+    }
+  ]
+}

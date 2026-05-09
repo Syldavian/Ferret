@@ -1,0 +1,41 @@
+{
+  "scenario_title": "TTL mismatch on identical owner/type add within existing RRset",
+  "test_rationale": "The test seeds a name with an existing A rrset and then issues one UPDATE that adds another A at the same owner with a different TTL. This directly targets the underspecified interaction between RFC 2136 update grammar and RFC 2181 rrset TTL semantics. Because the server must choose between normalizing the TTL, rejecting the update, or otherwise changing rrset state, the follow-up QUERY can distinguish accepting implementations from rejecting ones and confirm whether the rrset contents changed.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accept the update and normalize the added RR into the existing rrset TTL, yielding a single A rrset in the zone.",
+        "reply_rcode": "NOERROR",
+        "post_state": "QUERY returns ttl1.campus.edu. A with both RDATA values present as one rrset; the effective TTL is canonicalized to the rrset TTL."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the update because the added RR's TTL conflicts with the existing rrset TTL, treating the request as invalid for the current rrset state.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "QUERY shows the original single A rrset unchanged."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 permits per-RR TTLs in UPDATE RRs, while RFC 2181 §5.2 requires a single TTL per rrset, but neither RFC specifies whether a conflicting add_rr must be normalized to the existing TTL, replace the rrset, or be rejected. That leaves server-side conflict resolution underdefined, so implementations may differ in both reply code and resulting rrset state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

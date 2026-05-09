@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Duplicate add_rr for the same RR in one UPDATE",
+  "test_rationale": "This test uses one UPDATE with two identical add_rr records against an existing A RRset so the only variable is intra-message duplicate handling. Because RFC 2136 is silent on duplicate adds, implementations may either accept the message and deduplicate to a single stored RR or reject it as an error. A follow-up QUERY on the touched owner name makes the resulting rrset state observable even when the reply code is the only difference.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE and collapses duplicate adds as a benign idempotent no-op for the existing RR, leaving a single A RR in the rrset.",
+        "reply_rcode": "NOERROR",
+        "post_state": "dup.campus.edu. has exactly one A 192.0.2.30 RR in the rrset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats duplicate add_rr entries for the same RR in one UPDATE as a semantic conflict or malformed update and rejects the message.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "dup.campus.edu. remains unchanged with one A 192.0.2.30 RR."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines addition semantics but does not specify how an UPDATE processor must handle duplicate add_rr entries for the same RR within one message. RFC 2181 §5.2 says an RRSet is a set, which supports deduplication, but it does not require any particular UPDATE-time behavior. Therefore implementations may differ on whether duplicate adds are silently collapsed, treated as idempotent, or rejected."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

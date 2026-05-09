@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Name_absent prereq with delete_rrset to absent type",
+  "test_rationale": "This test isolates the underspecified corner where the prerequisite explicitly establishes that l.campus.edu. is absent, then the UPDATE requests delete_rrset for A at that same name. Because the name is already absent, some servers may accept the request as vacuously satisfied and return NOERROR, while others may reject it as a semantic contradiction and return REFUSED or another error. The follow-up QUERY is included to confirm the resulting state and keep the oracle consistent, but the primary observable difference is the UPDATE reply.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat the delete_rrset at a prerequisite-absent name as a valid no-op after the name_absent prerequisite has been satisfied.",
+        "reply_rcode": "NOERROR",
+        "post_state": "l.campus.edu. remains absent; QUERY returns NXDOMAIN or otherwise no A rrset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject the UPDATE as semantically inconsistent even though the name_absent prerequisite passed.",
+        "reply_rcode": "REFUSED",
+        "post_state": "No change; QUERY still shows l.campus.edu. absent with no A rrset."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.1 defines the name_absent prerequisite, and §3.4.2.2 defines delete_rrset, but the RFC does not say whether deleting an rrset at a name just proven absent is a harmless no-op or an error. That leaves the UPDATE reply code implementation-defined even when the message is otherwise valid."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

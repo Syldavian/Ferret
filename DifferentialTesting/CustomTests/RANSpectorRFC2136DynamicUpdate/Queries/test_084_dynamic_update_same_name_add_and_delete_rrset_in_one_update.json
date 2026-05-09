@@ -1,0 +1,45 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "update_intra_message_conflict",
+  "Notes": "Single UPDATE contains an add_rr and a delete_rrset for the same owner/type. The prerequisite ensures the RRset exists before the message is processed. The follow-up QUERY checks whether the RRset survives, is removed, or the server rejected the UPDATE.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add a new A RR to a.campus.edu. and delete the entire A RRset at the same owner/type in the same Update Section.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "a.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "a.campus.edu. 500 IN A 198.51.100.8"
+        },
+        {
+          "Kind": "delete_rrset",
+          "Name": "a.campus.edu.",
+          "Type": "A"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "a.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RRset is absent, unchanged, or reflects the added record after the UPDATE."
+    }
+  ]
+}

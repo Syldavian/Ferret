@@ -1,0 +1,42 @@
+{
+  "scenario_title": "Add CNAME where other data already exists",
+  "test_rationale": "The UPDATE is intentionally minimal: it adds a single CNAME at an owner name that already has an A RRset, creating the RFC-defined semantic conflict without any delete operations that would resolve it. That leaves the server to choose its own conflict handling policy, which can surface as different update RCODEs and different follow-up query results for the affected owner name.",
+  "involved_rfcs": [
+    "2136",
+    "2181",
+    "1034"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the conflicting CNAME addition with a DNS update error such as YXRRSET, leaving the existing A RRset intact.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "QUERY cnameconflict.campus.edu. A returns the original A RRset; QUERY cnameconflict.campus.edu. CNAME returns no CNAME rrset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Handle the semantic conflict differently, potentially accepting the update or otherwise mapping the violation to a different reply code.",
+        "reply_rcode": "NOERROR",
+        "post_state": "QUERY cnameconflict.campus.edu. CNAME may be present, and the A RRset may be removed or otherwise altered."
+      }
+    },
+    "why_divergence": "RFC 1034 §3.6.2 and RFC 2181 §10.1 define CNAME exclusivity, and RFC 2136 §3.4.2 requires atomic update processing, but the exact failure mapping for an UPDATE that adds a CNAME where other data already exists is not precisely specified. Implementations therefore may differ on whether to reject the update, accept it, or transform the existing RRsets, producing observable differences in both the UPDATE reply and the post-update zone contents."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

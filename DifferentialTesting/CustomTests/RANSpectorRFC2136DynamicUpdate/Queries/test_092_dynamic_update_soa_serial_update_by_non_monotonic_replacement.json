@@ -1,0 +1,47 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "soa_serial_non_monotonic_replacement",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Replace the apex SOA with an otherwise identical SOA whose serial does not advance (equal serial), keeping the rest of the zone untouched.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "campus.edu.",
+          "Type": "SOA",
+          "Rrs": [
+            "campus.edu. 500 IN SOA ns1.campus.edu. root.campus.edu. 3 86400 500 2419200 500"
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "campus.edu. 500 IN SOA ns1.campus.edu. root.campus.edu. 3 86400 500 2419200 500"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "campus.edu. 500 IN SOA ns1.campus.edu. root.campus.edu. 3 86400 500 2419200 500"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "campus.edu.",
+      "Type": "SOA",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the apex SOA was accepted, rejected, or normalized after the UPDATE."
+    }
+  ]
+}

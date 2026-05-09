@@ -1,0 +1,42 @@
+{
+  "scenario_title": "Idempotent replay of a delete_rr on already-absent data",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats delete_rr of already-absent data as an idempotent no-op when prerequisites are satisfied; UPDATE succeeds.",
+        "reply_rcode": "NOERROR",
+        "post_state": "replay.campus.edu. TXT remains absent."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the delete_rr because the target RR is already absent, mapping the semantic failure to an UPDATE error.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "replay.campus.edu. TXT remains absent."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines how delete_rr is encoded, and §3.2.3 defines prerequisite processing, but it does not state whether deleting a specific RR that is already absent must succeed as a no-op or fail with NXRRSET/SERVFAIL. Servers therefore differ on whether the operation is idempotent once unrelated prerequisites are met.",
+    "test_rationale": "This scenario isolates the underspecified case by using a prerequisite on an unrelated existing name so the UPDATE reaches the mutation logic, then issuing a delete_rr for a TXT RR that is not present. The observable difference is whether the server returns NOERROR or an error such as NXRRSET, while the follow-up TXT query should remain empty in either case, making the divergence a reply-only oracle.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

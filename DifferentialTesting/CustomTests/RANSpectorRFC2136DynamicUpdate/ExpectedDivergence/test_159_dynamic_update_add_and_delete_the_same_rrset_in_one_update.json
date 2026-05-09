@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Add and delete the same RRset in one UPDATE",
+  "test_rationale": "This scenario isolates the underspecified case where a single dynamic update both adds an A RR and deletes the same A RRset for flip.campus.edu. Because RFC 2136 does not mandate whether UPDATE operations are processed strictly in message order or normalized as a batch, servers can legitimately diverge in the returned RCODE and in whether the queried RRset exists afterward. A follow-up QUERY makes the post-state observable even if one implementation only diverges in the response code.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Processes the add_rr and delete_rrset sequentially, resulting in an empty final state for the RRset after a NOERROR update reply.",
+        "reply_rcode": "NOERROR",
+        "post_state": "absent"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the same-owner same-type add/delete combination as conflicting or normalizes it differently, resulting in a different UPDATE reply and/or a retained RRset.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "present_or_absent"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 and §3.4.3 define add_rr and delete_rrset semantics in isolation, but do not normatively specify intra-message ordering or conflict resolution when both target the same RRset in one UPDATE. Consequently, implementations may apply operations sequentially, coalesce them, or reject them as contradictory, producing different visible results."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

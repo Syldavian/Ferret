@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "duplicate_add_rr_replay",
+  "Notes": "Initial zone already contains replay.campus.edu. A 192.0.2.70. The UPDATE attempts to add the exact same RR after asserting rrset_exists, which is a state-dependent duplicate replay permitted by the gap.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Assert that replay.campus.edu. has an existing A RRset, then re-add the exact same RR as a duplicate replay.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "replay.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "replay.campus.edu. 500 IN A 192.0.2.70"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "replay.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RRset remains present and unchanged after the duplicate replay attempt."
+    }
+  ]
+}

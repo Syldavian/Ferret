@@ -1,0 +1,45 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "update_ordering_conflict",
+  "Notes": "Single UPDATE contains an add_rr followed by delete_rrset for the same owner/type; observe whether the server applies operations sequentially, rejects the conflict, or preserves the added RRset.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add a TXT RRset at a.example.campus.edu. and then delete the same TXT RRset in the same UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_absent",
+          "Name": "a.example.campus.edu.",
+          "Type": "TXT"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "a.example.campus.edu. 500 IN TXT \"alpha\""
+        },
+        {
+          "Kind": "delete_rrset",
+          "Name": "a.example.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "a.example.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the TXT RRset exists after the UPDATE."
+    }
+  ]
+}

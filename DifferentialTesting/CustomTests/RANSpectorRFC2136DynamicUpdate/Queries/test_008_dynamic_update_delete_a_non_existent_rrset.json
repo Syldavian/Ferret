@@ -1,0 +1,35 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_nonexistent_rrset",
+  "Notes": "Unconditional delete_rrset targets an absent RRset to exercise the unspecified success-vs-failure behavior without prerequisites.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete a TXT RRset that does not exist at absentset.campus.edu., with no prerequisites.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "absentset.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "absentset.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the name remains empty after the UPDATE regardless of the reply code."
+    }
+  ]
+}

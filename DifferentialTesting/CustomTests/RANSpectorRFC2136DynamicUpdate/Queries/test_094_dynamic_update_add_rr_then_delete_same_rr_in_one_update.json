@@ -1,0 +1,43 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "add_then_delete_same_rr",
+  "Notes": "Single UPDATE adds and then deletes the exact same RR for y.campus.edu.; the follow-up QUERY checks whether the RR persists.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add y.campus.edu. IN A 192.0.2.20 and then delete the exact same RR in the same UPDATE message.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "y.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "y.campus.edu. 500 IN A 192.0.2.20"
+        },
+        {
+          "Kind": "delete_rr",
+          "Rr": "y.campus.edu. 500 IN A 192.0.2.20"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "y.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RRset remains present after the UPDATE."
+    }
+  ]
+}

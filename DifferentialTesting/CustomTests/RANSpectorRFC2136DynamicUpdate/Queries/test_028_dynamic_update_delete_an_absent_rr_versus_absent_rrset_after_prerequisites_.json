@@ -1,0 +1,45 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "absent_delete_semantics",
+  "Notes": "The update prerequisites are satisfied by targeting a name that exists in the zone, while the operation deletes an RRset that is absent. This probes whether the server treats the missing-target delete as a no-op or as a semantic update failure.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Prerequisites succeed, then delete an absent TXT RRset at a name inside the zone.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "campus.edu."
+        },
+        {
+          "Kind": "rrset_absent",
+          "Name": "ghost.campus.edu.",
+          "Type": "TXT"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "ghost.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "ghost.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the absent TXT RRset remains absent after the UPDATE attempt."
+    }
+  ]
+}

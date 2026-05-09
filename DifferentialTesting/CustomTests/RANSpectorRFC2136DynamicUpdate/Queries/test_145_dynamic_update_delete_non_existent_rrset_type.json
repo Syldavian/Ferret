@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_missing_rrset_type",
+  "Notes": "Delete an RRset type that does not exist at an existing owner name. The prerequisite makes the owner existence explicit; the zone should remain unchanged regardless of reply code.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to delete the non-existent MX RRset at an owner name that is known to exist.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "keep.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "keep.campus.edu.",
+          "Type": "MX"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "keep.campus.edu.",
+      "Type": "MX",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe that the MX RRset remains absent after the UPDATE, regardless of whether the server replied NOERROR, NXRRSET, or SERVFAIL."
+    }
+  ]
+}

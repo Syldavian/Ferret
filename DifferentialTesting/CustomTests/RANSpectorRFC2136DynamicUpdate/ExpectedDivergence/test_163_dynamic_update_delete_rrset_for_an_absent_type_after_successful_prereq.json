@@ -1,0 +1,41 @@
+{
+  "scenario_title": "delete_rrset for an absent type after successful prereq",
+  "test_rationale": "This scenario isolates the underspecified behavior with a single UPDATE: the prerequisite on helper.campus.edu. confirms the update is otherwise admissible, and the operation deletes a TXT RRset that does not exist at absent.campus.edu. Because the post-state is unchanged either way, the only observable divergence is the UPDATE reply code, which is exactly the gap left open by RFC 2136 for no-op RRset deletion.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat delete_rrset of an absent RRset as a successful no-op after the prerequisite passes.",
+        "reply_rcode": "NOERROR",
+        "post_state": "absent.campus.edu. has no TXT rrset"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treat delete_rrset of an absent RRset as a semantic error even though prerequisites passed.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "absent.campus.edu. has no TXT rrset"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.3 defines delete_rrset as deleting all RRs of a type at a name, but it does not clearly require a specific reply code when that RRset is already absent. As a result, implementations may differ between NOERROR for a no-op delete and NXRRSET to report the missing RRset, while RFC 2181 §5.2 does not resolve the update semantic."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

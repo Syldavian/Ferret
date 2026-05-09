@@ -1,0 +1,43 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "rrset_ttl_mismatch_add",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add an A RR to an existing RRset using the same owner/type/rdata but a different TTL.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "ttlmix.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "ttlmix.campus.edu. 300 IN A 198.51.100.7"
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "ttlmix.campus.edu. 600 IN A 198.51.100.7"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "ttlmix.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the post-update RRset and whether the server normalized, rejected, or preserved the TTL state."
+    }
+  ]
+}

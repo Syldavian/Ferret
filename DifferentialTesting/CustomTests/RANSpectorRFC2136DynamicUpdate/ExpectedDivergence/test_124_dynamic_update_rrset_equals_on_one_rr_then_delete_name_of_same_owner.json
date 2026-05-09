@@ -1,0 +1,41 @@
+{
+  "scenario_title": "rrset_equals on one RR then delete_name of same owner",
+  "test_rationale": "This test creates an owner name with two coexisting RRsets, then uses rrset_equals to pin only the A RRset before issuing delete_name for that same owner in the same UPDATE. Because RFC 2136 does not clearly define whether delete_name must erase all data at the owner, only the verified RRset, or be rejected when combined with a more specific prerequisite, the post-update queries for A and MX expose whether sibling RRsets survive or are wiped, making the ambiguity directly observable.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE and treats delete_name as wiping all data at m.campus.edu., so both A and MX disappear.",
+        "reply_rcode": "NOERROR",
+        "post_state": "m.campus.edu. has no A RRset and no MX RRset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the composition or applies a narrower interpretation that preserves sibling data, resulting in a different reply and/or retained MX RRset.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "m.campus.edu. retains the MX RRset, and possibly the A RRset if the UPDATE was rejected or narrowed."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.1 allows rrset_equals to verify a specific RRset, and RFC 2136 §3.4.2.2 defines delete_name as deleting name-related data, but the protocol does not clearly specify whether a delete_name following an rrset_equals prerequisite at the same owner must remove all RRsets, only the pinned RRset, or be rejected as an ambiguous composition. That leaves the reply and the resulting sibling RRset state underspecified."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

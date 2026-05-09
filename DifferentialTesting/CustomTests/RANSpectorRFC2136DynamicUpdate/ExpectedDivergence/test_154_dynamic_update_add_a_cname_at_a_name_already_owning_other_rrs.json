@@ -1,0 +1,44 @@
+{
+  "scenario_title": "Add a CNAME at a name already owning other RRs",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181",
+    "1034"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the UPDATE because adding a CNAME where other RRsets already exist violates zone-state exclusivity.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "x.campus.edu. remains an A/MX owner and does not gain a CNAME."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept the UPDATE and enforce CNAME singleton semantics by removing the pre-existing data or otherwise normalizing the name.",
+        "reply_rcode": "NOERROR",
+        "post_state": "x.campus.edu. becomes CNAME-only, or the prior A/MX data is removed."
+      }
+    },
+    "why_divergence": "RFC 1034 §3.6.2 and RFC 2181 §10.1 require CNAME exclusivity, but RFC 2136 §3.4.3 does not specify whether an UPDATE that adds a CNAME to an already-populated name must be rejected, partially applied, or accepted with automatic cleanup. That leaves the server's UPDATE-time enforcement strategy undefined, so implementations may diverge in both reply code and resulting zone state.",
+    "test_rationale": "The zone starts with x.campus.edu. already owning A and MX data, then performs a single UPDATE that adds a CNAME at the same owner name. This directly triggers the RFC 2181 CNAME singleton invariant in an UPDATE context, where RFC 2136 is silent about whether the server should reject the packet or repair the zone automatically. A follow-up QUERY on x.campus.edu. makes the post-state observable, distinguishing a strict rejection from any server that accepts and cleans up or otherwise mishandles the coexistence rule.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

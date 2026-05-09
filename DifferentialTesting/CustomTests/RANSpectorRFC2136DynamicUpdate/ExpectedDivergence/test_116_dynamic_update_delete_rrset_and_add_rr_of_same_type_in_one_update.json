@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Delete RRset and add RR of same type in one UPDATE",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Applies the delete_rrset and add_rr operations within the same UPDATE as a replace-like transaction.",
+        "reply_rcode": "NOERROR",
+        "post_state": "f.campus.edu. has A 192.0.2.62 only."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the mixed delete_rrset/add_rr sequence for the same owner/type as conflicting or otherwise non-committable, so the update is rejected or not applied.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "f.campus.edu. remains A 192.0.2.61."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4 and §3.4.2 define delete_rrset and add_rr, but do not specify the required semantics when both target the same owner/type in one UPDATE message. RFC 2181 §5.4 discusses RRSet formation, not transaction ordering within Dynamic Update. Therefore implementations may differ on whether the message is processed as an in-message replacement, rejected as conflicting, or left unapplied, producing observable differences in both UPDATE reply and follow-up QUERY.",
+    "test_rationale": "This test isolates the intra-message ordering ambiguity by starting with a single A RRset and issuing one UPDATE that first deletes that RRset and then adds a new A RR at the same name. Because the protocol does not define whether those operations compose as a replace, are conflicting, or must be processed strictly in order, servers can diverge either in the UPDATE RCODE or in the final RRset contents. A single follow-up QUERY makes the outcome binary and directly observable.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

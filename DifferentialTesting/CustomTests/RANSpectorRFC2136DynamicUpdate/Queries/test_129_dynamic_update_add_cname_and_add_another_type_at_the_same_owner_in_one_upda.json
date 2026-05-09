@@ -1,0 +1,72 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_exclusivity_update_ordering",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "In one UPDATE, add a CNAME at cname1.campus.edu. and also add a non-CNAME RR at the same owner. This tests whether the server rejects the whole update or applies one RRset and not the other.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "cname1.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "cname1.campus.edu. 500 IN A 198.51.100.10"
+          ]
+        },
+        {
+          "Kind": "rrset_absent",
+          "Name": "cname1.campus.edu.",
+          "Type": "CNAME"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "cname1.campus.edu. 500 IN CNAME target.campus.edu."
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "cname1.campus.edu. 500 IN TXT \"marker\""
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "cname1.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the CNAME RRset exists after the UPDATE."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "cname1.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the non-CNAME RRset exists after the UPDATE."
+    },
+    {
+      "Id": "q3",
+      "Kind": "QUERY",
+      "Name": "cname1.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the pre-existing A RRset survives or is removed as part of exclusivity enforcement."
+    }
+  ]
+}

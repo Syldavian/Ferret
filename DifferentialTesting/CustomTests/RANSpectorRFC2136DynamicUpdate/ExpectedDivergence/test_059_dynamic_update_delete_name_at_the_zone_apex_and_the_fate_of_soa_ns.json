@@ -1,0 +1,44 @@
+{
+  "scenario_title": "Delete_name at the zone apex and the fate of SOA/NS",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181",
+    "1034"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects or refuses to perform apex delete_name to preserve zone integrity.",
+        "reply_rcode": "REFUSED",
+        "post_state": "Apex SOA/NS and TXT remain present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accepts the UPDATE but constrains or partially applies the delete at the apex, yielding different visible post-state.",
+        "reply_rcode": "NOERROR",
+        "post_state": "Apex TXT is removed while mandatory SOA/NS remain, or the server otherwise returns a different apex state."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines delete_name, but RFC 1034 §4.3.5 and RFC 2181 §5.4 require SOA and NS at the zone apex and do not specify how an UPDATE processor must reconcile an apex-wide delete_name with those mandatory records. As a result, implementations may disagree on whether to refuse the UPDATE, apply it partially, or alter the apex rrsets in different ways.",
+    "test_rationale": "This test sends a single delete_name UPDATE aimed directly at the zone apex, where SOA and NS are mandatory but the RFCs do not define the precise outcome of deleting the entire name. By querying the apex SOA, NS, and TXT afterward, the test can detect both outright refusal and any post-update state differences caused by partial or permissive handling of the apex deletion.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

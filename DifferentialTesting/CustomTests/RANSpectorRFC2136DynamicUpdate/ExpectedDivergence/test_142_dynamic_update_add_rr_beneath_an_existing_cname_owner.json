@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Add RR beneath an existing CNAME owner",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects the UPDATE as a semantic conflict when adding a non-CNAME RR beneath an existing CNAME owner.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "Zone remains unchanged: c1.campus.edu. still has only the CNAME RRset and no A RRset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Processes the packet without creating mixed owner data, but may differ in whether it reports an error or silently ignores the conflicting add.",
+        "reply_rcode": "NOERROR",
+        "post_state": "Zone remains unchanged: c1.campus.edu. still has only the CNAME RRset and no A RRset."
+      }
+    },
+    "why_divergence": "RFC 2181 §10.1 forbids a node with a CNAME RRset from also having other data, but RFC 2136 §3.4.2 does not mandate a unique UPDATE failure code or a single required processor behavior for an otherwise well-formed add_rr that violates that invariant. As a result, implementations can diverge on the UPDATE reply while still leaving the zone unchanged.",
+    "test_rationale": "The test creates a valid dynamic update that targets an owner already containing a CNAME and then attempts to add an A RR there. The prerequisite only establishes that the owner name exists, so the UPDATE is syntactically and procedurally valid under RFC 2136, but the added RR violates the CNAME exclusivity rule from RFC 2181. This makes the server’s handling of the semantic conflict observable through the UPDATE RCODE and by querying both the CNAME and A rrsets afterward to confirm whether the zone stayed unchanged or was modified.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

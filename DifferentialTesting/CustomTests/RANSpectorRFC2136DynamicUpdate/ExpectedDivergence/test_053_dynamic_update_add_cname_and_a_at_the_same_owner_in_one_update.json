@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add CNAME and A at the same owner in one UPDATE",
+  "test_rationale": "This test targets the protocol gap around simultaneous creation of a CNAME and another RR type at the same owner in one dynamic update. Because the UPDATE contains no prerequisites and only two conflicting add operations, a server must choose between rejecting the message, applying operations in an internal order, or otherwise repairing exclusivity. The two follow-up queries for CNAME and A make the surviving RRset, if any, visible and distinguishable from a clean rejection that leaves the name absent.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE or preserves one RRset according to its internal processing order, leaving a single surviving RRset at alias.campus.edu. or possibly rejecting with YXRRSET; post-state is observable via follow-up queries.",
+        "reply_rcode": "NOERROR",
+        "post_state": "Either CNAME-only or A-only at alias.campus.edu., depending on implementation behavior."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE to enforce CNAME exclusivity, typically with YXRRSET, leaving alias.campus.edu. absent.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "No RRsets present at alias.campus.edu."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines the wire format for multiple add_rr operations in one UPDATE but does not specify how the server must resolve intra-message creation of mutually exclusive RRsets at the same owner name. RFC 2181 §10.1 says a node with a CNAME should have no other data, but it does not define update-order semantics or whether the server should reject the whole message versus preserve one RRset implicitly. This leaves the reply code and resulting post-state underspecified."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

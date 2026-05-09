@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Delete a missing RR with rrset_exists satisfied",
+  "test_rationale": "This test isolates the gap between prerequisite satisfaction and exact-RR deletion semantics. The rrset_exists prerequisite ensures the A RRset is present, but the UPDATE targets an A record that is not in that RRset. Implementations may either accept the request as a no-op and return NOERROR, or reject it with an error such as NXRRSET. A follow-up QUERY confirms whether the RRset itself stayed intact, making the observable divergence primarily in the UPDATE reply.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats deletion of a non-member RR as a harmless no-op once the RRset prerequisite is satisfied.",
+        "reply_rcode": "NOERROR",
+        "post_state": "rrhost.campus.edu. remains an A RRset containing 192.0.2.50"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the exact-RR deletion because the specified RR is absent, despite the RRset existing.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "rrhost.campus.edu. remains an A RRset containing 192.0.2.50"
+      }
+    },
+    "why_divergence": "RFC 2136 §7.2 says data-present/absent conditions are handled by prerequisites, but it does not define whether deleting a specific RR that is not a member of an existing RRset is an idempotent no-op or an error. That leaves the UPDATE reply semantics underspecified while the post-state can remain unchanged."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

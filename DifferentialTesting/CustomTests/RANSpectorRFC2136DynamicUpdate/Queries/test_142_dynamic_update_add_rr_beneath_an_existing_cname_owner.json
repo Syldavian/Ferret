@@ -1,0 +1,49 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_owner_conflict_add_rr",
+  "Notes": "",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to add an A RR at an owner name that already has a CNAME, with a prerequisite that the owner name exists.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "c1.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "c1.campus.edu. 500 IN A 192.0.2.40"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "c1.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the existing CNAME remains present."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "c1.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether an A RRset was created alongside the CNAME."
+    }
+  ]
+}

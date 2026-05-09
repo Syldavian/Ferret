@@ -1,0 +1,44 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "duplicate_add_rr",
+  "Notes": "Single UPDATE contains two identical add_rr operations for the same A RR at dup.campus.edu.; observe whether the server deduplicates, accepts both as idempotent, or rejects the message.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Send one UPDATE with two identical add_rrs for dup.campus.edu. A 192.0.2.30.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "dup.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "dup.campus.edu. 500 IN A 192.0.2.30"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "dup.campus.edu. 500 IN A 192.0.2.30"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "dup.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the post-state of the affected RRset."
+    }
+  ]
+}

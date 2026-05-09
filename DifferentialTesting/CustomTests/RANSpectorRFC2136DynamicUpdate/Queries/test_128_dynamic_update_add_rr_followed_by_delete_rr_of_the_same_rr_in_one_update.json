@@ -1,0 +1,47 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "intra_message_add_then_delete_same_rr",
+  "Notes": "UPDATE adds an RR and then deletes that exact RR later in the same message. The RR is pre-seeded only so QUERY can distinguish no-op vs lingering post-state. Servers may either treat the delete against interim state and end with no change, or reject/abort based on pre-update state evaluation.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add temp.campus.edu. A 198.51.100.77, then delete the exact same RR in the same UPDATE message.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "temp.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "temp.campus.edu. 500 IN A 198.51.100.77"
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "temp.campus.edu. 500 IN A 198.51.100.77"
+        },
+        {
+          "Kind": "delete_rr",
+          "Rr": "temp.campus.edu. 500 IN A 198.51.100.77"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "temp.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RRset remains present, is removed, or is unchanged after the UPDATE."
+    }
+  ]
+}

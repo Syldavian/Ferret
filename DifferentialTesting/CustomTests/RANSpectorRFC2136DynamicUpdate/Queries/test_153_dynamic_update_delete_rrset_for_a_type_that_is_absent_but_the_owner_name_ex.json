@@ -1,0 +1,50 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_absent_rrset",
+  "Notes": "Owner name exists via an A RRset, but the targeted TXT RRset is absent. The UPDATE uses a name_in_use prerequisite and a delete_rrset operation for the absent type, then queries the owner to observe whether the zone remains unchanged and whether the server treats the delete as NOERROR or as a semantic failure.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete an absent TXT RRset at an existing owner name, guarded by a name_in_use prerequisite.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "x.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "x.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "x.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the owner name remains present with its A RRset if the UPDATE was treated as a no-op; also serves as a consistent post-state check if the UPDATE was rejected."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "x.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe that the targeted TXT RRset is absent after the UPDATE regardless of whether the server returned success or an error."
+    }
+  ]
+}

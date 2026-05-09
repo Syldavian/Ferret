@@ -1,0 +1,41 @@
+{
+  "scenario_title": "TTL mismatch among RRset members added by UPDATE",
+  "test_rationale": "This test starts with a simple A RRset for host5.campus.edu. and issues one syntactically valid UPDATE that adds two more A records for the same owner using conflicting TTLs. That directly exercises the RFC 2136 gap around how an UPDATE processor enforces RFC 2181’s equal-TTL RRset invariant. The follow-up QUERY makes the outcome binary by revealing whether the server accepted and canonicalized the RRset or rejected the UPDATE and preserved the original state.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE and canonicalizes the RRset to a single TTL, typically preserving the existing TTL or normalizing the set before serving.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host5.campus.edu. has an A RRset with both added addresses present, served with one TTL value."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE because the input attempts to create an unequal-TTL RRset, leaving the original RRset unchanged.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "host5.campus.edu. remains only the original A RRset with 192.0.2.90 TTL 300."
+      }
+    },
+    "why_divergence": "RFC 2181 §5.2 requires all RRs in an RRset to have the same TTL, but RFC 2136 §3.4.2 does not specify whether an UPDATE that adds same-owner/same-type RRs with differing TTLs must be rejected, normalized, or accepted and rewritten. Servers therefore diverge both in UPDATE success/failure and in whether the post-update RRset contains the new records."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

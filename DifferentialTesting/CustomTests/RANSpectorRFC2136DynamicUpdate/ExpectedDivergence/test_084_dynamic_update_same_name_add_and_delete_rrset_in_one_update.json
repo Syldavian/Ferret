@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Same-name add and delete_rrset in one UPDATE",
+  "test_rationale": "This test uses one UPDATE carrying both an add_rr and a delete_rrset for the same A RRset at a.campus.edu., with the RRset guaranteed to exist beforehand. The protocol gap is whether the server treats the Update Section as ordered operations, as an unordered set, or as an internally contradictory request. The follow-up QUERY exposes whether the RRset survives, is removed, or the server rejected the message, which is enough to distinguish BIND and Knot behavior under this underspecified case.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Applies the UPDATE in wire order or otherwise preserves the added RR before the delete_rrset effect, leaving the A RRset absent or reflecting a specific internal ordering choice; reply is NOERROR.",
+        "reply_rcode": "NOERROR",
+        "post_state": "a.campus.edu. A RRset absent or otherwise not matching the pre-update RRset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the same-name add_rr and delete_rrset as contradictory or normalizes them differently, rejecting the UPDATE or deleting the RRset regardless of the add; reply may be NXRRSET or SERVFAIL, with the post-state absent.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "a.campus.edu. A RRset absent."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4 describes the Update Section as a set and §7.2 notes that data-present/data-absent errors are not defined from processing the Update Section, but it does not specify intra-message sequencing or conflict resolution when an add_rr and delete_rrset target the same owner/type. RFC 2181 §5.2 reinforces RRset atomicity but likewise does not define how a single UPDATE with self-conflicting edits must be resolved, so compliant servers can differ in reply code and resulting RRset state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

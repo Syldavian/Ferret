@@ -1,0 +1,48 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "duplicate_add_rr_same_message",
+  "Notes": "Single UPDATE with two identical add_rr operations for the same owner/type/class/RDATA to probe whether the server deduplicates, treats the second add as a semantic conflict, or otherwise errors. Follow with QUERY for the touched TXT RRset.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add the same TXT RR twice in one UPDATE to dup.campus.edu. and observe whether the server accepts it idempotently or rejects it as a duplicate/conflict.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "dup.campus.edu."
+        },
+        {
+          "Kind": "rrset_absent",
+          "Name": "dup.campus.edu.",
+          "Type": "TXT"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "dup.campus.edu. 500 IN TXT \"x\""
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "dup.campus.edu. 500 IN TXT \"x\""
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "dup.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the TXT RRset exists after the UPDATE, and if so whether it appears as a single RR."
+    }
+  ]
+}

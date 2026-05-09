@@ -1,0 +1,41 @@
+{
+  "scenario_title": "SOA serial update by non-monotonic replacement",
+  "test_rationale": "This test uses the smallest possible apex-only UPDATE that replaces the existing SOA with an identical SOA carrying the same serial, which is syntactically valid but fails the positive-advance expectation described in RFC 2136 and RFC 1982. Because the RFCs do not define server-side enforcement or a required error code, the scenario probes whether an authoritative server accepts the change, rejects it, or otherwise normalizes it. A follow-up SOA QUERY on the apex provides a stable observation of the resulting state after the UPDATE reply.",
+  "involved_rfcs": [
+    "2136",
+    "1982"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the syntactically valid UPDATE and leaves the apex SOA present; some builds may preserve the equal serial exactly, making the post-state indistinguishable from the pre-state except for the UPDATE reply.",
+        "reply_rcode": "NOERROR",
+        "post_state": "campus.edu. SOA remains present with serial 3."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the non-monotonic SOA replacement as a policy/validation choice even though RFC 2136 does not mandate a specific rejection code.",
+        "reply_rcode": "REFUSED",
+        "post_state": "campus.edu. SOA remains unchanged at serial 3."
+      }
+    },
+    "why_divergence": "RFC 2136 §4.2 requires the requestor to move the SOA serial in a positive direction and references RFC 1982 serial arithmetic, but it does not specify whether a server must enforce that rule on receipt of a well-formed UPDATE or which RCODE to return if it does. Therefore, servers may differ between accepting the replacement, rejecting it with REFUSED/SERVFAIL/YXRRSET, or otherwise handling the SOA update policy, making both the UPDATE reply and the observed post-state implementation-dependent."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

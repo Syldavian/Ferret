@@ -1,0 +1,38 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "duplicate_add_rr",
+  "Notes": "One UPDATE carries two identical add_rr operations for the same A RR. The zone starts without d.campus.edu., so the first add creates the RRset member and the second add exercises whether the server deduplicates identical adds, treats the second as a no-op, or rejects sequential application.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add the same A RR twice in a single UPDATE with no prerequisites.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "d.campus.edu. 500 IN A 192.0.2.20"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "d.campus.edu. 500 IN A 192.0.2.20"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "d.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the resulting RRset state after the UPDATE."
+    }
+  ]
+}

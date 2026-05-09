@@ -1,0 +1,44 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "intra_update_order_dependence",
+  "Notes": "Single UPDATE adds and then deletes the same A RR for ord.campus.edu. within one message. The follow-up QUERY checks whether the RRset remains absent after the UPDATE.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add ord.campus.edu. A 192.0.2.50, then delete the same RR in the same UPDATE message.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_absent",
+          "Name": "ord.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "ord.campus.edu. 300 IN A 192.0.2.50"
+        },
+        {
+          "Kind": "delete_rr",
+          "Rr": "ord.campus.edu. 300 IN A 192.0.2.50"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "ord.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RRset is absent after the UPDATE."
+    }
+  ]
+}

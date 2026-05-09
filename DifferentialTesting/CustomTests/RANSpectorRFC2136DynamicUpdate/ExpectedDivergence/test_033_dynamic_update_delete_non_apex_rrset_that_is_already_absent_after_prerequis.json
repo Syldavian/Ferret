@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Delete non-apex RRset that is already absent after prerequisites succeed",
+  "test_rationale": "The zone contains a name that is definitively in use via an A rrset, while its MX rrset is absent. The UPDATE first satisfies a prerequisite on the name and absence of the MX rrset, then issues delete_rrset for that already-absent MX rrset. This isolates the protocol gap to the UPDATE reply: both servers should leave post-state unchanged, but they may differ on whether the operation is accepted or rejected when nothing exists to delete.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats the delete of an already-absent rrset as a successful no-op after prerequisites pass.",
+        "reply_rcode": "NOERROR",
+        "post_state": "absenttype.campus.edu. has no MX rrset"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the operation-phase delete of an absent rrset even though the prerequisite was satisfied.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "absenttype.campus.edu. has no MX rrset"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 requires prerequisites to be checked before update operations, and §3.4.2.7 defines delete_rrset as deleting all RRs of a given name/type, but it does not say whether deleting an rrset that is already absent must succeed as a no-op or fail once the operation phase is reached. That leaves the reply code for this state-dependent case unspecified."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

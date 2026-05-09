@@ -1,0 +1,42 @@
+{
+  "scenario_title": "Delete absent RR using delete_rr after prereq says RRset exists",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats delete_rr of a non-member RR under an existing RRset prerequisite as a semantic no-op and accepts the UPDATE.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host3.campus.edu. retains the original A RRset: 192.0.2.70 and 192.0.2.71."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE because the specific RR to delete is absent, despite the rrset_exists prerequisite having passed.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "host3.campus.edu. retains the original A RRset: 192.0.2.70 and 192.0.2.71."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2.3 defines the rrset_exists prerequisite, but it does not explicitly require a server to accept or reject delete_rr for a specific RR that is not present once that prerequisite has already succeeded. As a result, implementations may differ on whether this is a no-op success or an error such as NXRRSET/SERVFAIL, making the UPDATE reply observably divergent while leaving the RRset unchanged.",
+    "test_rationale": "The scenario isolates the underspecified edge case by first proving the A RRset exists and then attempting to delete an A record that is definitely not in that RRset. Because the target RRset remains unchanged either way, the primary oracle is the UPDATE response code, and the follow-up query confirms the post-state is consistent with either a no-op accept or a rejection after no mutation.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

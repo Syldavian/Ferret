@@ -1,0 +1,47 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "ttl_conflict_multi_add",
+  "Notes": "Single UPDATE adds the same RRset member twice with identical owner/type/RDATA but different TTLs; follow-up QUERY observes which TTL, if any, is retained.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add the same A RR twice for host.campus.edu. with conflicting TTLs in one UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "host.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "host.campus.edu. 300 IN A 198.51.100.7"
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "host.campus.edu. 300 IN A 198.51.100.7"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "host.campus.edu. 600 IN A 198.51.100.7"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RRset exists and whether the server normalized or rejected the conflicting TTL update."
+    }
+  ]
+}

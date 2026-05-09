@@ -1,0 +1,42 @@
+{
+  "scenario_title": "Delete apex name and leave zone apex invariants unspecified",
+  "test_rationale": "This test sets up a minimal zone apex with the required SOA and NS plus one extra apex TXT rrset, then issues a single delete_name for the apex itself. That operation is the underspecified choice point: RFC 2136 does not say whether delete_name at the apex must be refused, must preserve mandatory rrsets, or may remove only non-mandatory apex data. The follow-up SOA, NS, and TXT queries make the difference observable both in the UPDATE reply and in the post-state.",
+  "involved_rfcs": [
+    "2136",
+    "1035",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the apex delete_name UPDATE or preserve mandatory apex data while possibly retaining the extra TXT rrset.",
+        "reply_rcode": "REFUSED",
+        "post_state": "SOA and NS remain at the apex; TXT may remain unchanged."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept the UPDATE differently, potentially deleting the apex TXT while preserving mandatory SOA/NS, or rejecting with a different rcode.",
+        "reply_rcode": "NOERROR",
+        "post_state": "SOA and NS remain at the apex; TXT is removed."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines delete_name but does not specify a special rule or mandatory error for deleting the zone apex. RFC 1035 and RFC 2181 §7 describe SOA/NS as structurally required at the apex, but they do not turn that into a precise UPDATE postcondition. As a result, implementations can differ in whether they reject the UPDATE, partially apply it, or preserve only mandatory apex rrsets, making both reply code and final apex contents implementation-dependent."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

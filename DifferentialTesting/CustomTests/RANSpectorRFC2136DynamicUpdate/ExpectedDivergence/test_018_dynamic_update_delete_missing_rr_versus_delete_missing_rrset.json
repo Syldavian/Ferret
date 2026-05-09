@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Delete missing RR versus delete missing RRset",
+  "test_rationale": "This test exercises the underspecified corner where an UPDATE deletes a record that is not present, without any prerequisite to force failure. The chosen helper data lets the client confirm that the zone state is unchanged regardless of how the server reports the attempt. The only meaningful axis left is the UPDATE reply RCODE, which is exactly where implementations are known to diverge.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treat deleting an absent RR as a harmless no-op or as NXRRSET while leaving the zone unchanged.",
+        "reply_rcode": "NOERROR",
+        "post_state": "absent.campus.edu. still has A 192.0.2.10; present.campus.edu. TXT \"keepme\" unchanged"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treat deleting an absent RR as an error, commonly NXRRSET or SERVFAIL, while leaving the zone unchanged.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "absent.campus.edu. still has A 192.0.2.10; present.campus.edu. TXT \"keepme\" unchanged"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 and §3.4.3 define delete_rr and delete_rrset syntax, but do not fully specify the required outcome when the targeted RR or RRset is absent and no prerequisite fails. RFC 2181 §5.2 clarifies data handling rules, yet does not pin down whether the UPDATE processor must treat deletion of missing data as success, NXRRSET, or SERVFAIL. As a result, compliant servers may differ in the reply code while preserving the zone contents."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

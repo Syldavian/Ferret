@@ -1,0 +1,47 @@
+{
+  "scenario_title": "Add then delete a different RRset in the same owner/type",
+  "test_rationale": "This test isolates the underspecified case where one UPDATE first adds an A record for temp.campus.edu. and then deletes the entire A RRset for that same owner/type. If the server processes update prerequisites and actions as an ordered sequence, the final state is empty and the reply should be NOERROR. If it instead evaluates the UPDATE as a conflicting batch or against the pre-update state, it may reject the message or handle it non-sequentially. The follow-up query makes the final RRset state observable, yielding a binary oracle across implementations.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Applies UPDATE operations sequentially; the added A RR is then removed by delete_rrset, so the transaction succeeds with no remaining A RRset.",
+        "reply_rcode": "NOERROR",
+        "post_state": "temp.campus.edu. has no A RRset"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the same-owner/type add-then-delete_rrset combination as a conflicting/invalid update and rejects it, or otherwise does not apply the sequence as ordered instructions.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "temp.campus.edu. has no A RRset or remains absent"
+      },
+      "group_3": {
+        "implementations": [],
+        "behavior": "Any implementation that accepts the update but leaves the A RRset present would also diverge on post-state.",
+        "reply_rcode": "NOERROR",
+        "post_state": "temp.campus.edu. has an A RRset"
+      }
+    },
+    "why_divergence": "RFC 2136 §3 and §7.2 define how UPDATEs are processed, but they do not require a server to interpret multiple update records as strictly ordered sequential mutations versus a set of net effects validated against the pre-update database. RFC 2181 §5.2 reinforces RRset atomicity expectations, yet it does not resolve intra-message conflicts where an RRset is created and then deleted in the same UPDATE. As a result, compliant servers may either apply the add then the delete and return NOERROR, or reject/handle the contradictory transaction differently, producing observable reply and/or post-state differences."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

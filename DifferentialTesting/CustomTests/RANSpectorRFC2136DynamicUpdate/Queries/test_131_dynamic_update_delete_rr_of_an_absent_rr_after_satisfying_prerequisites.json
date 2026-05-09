@@ -1,0 +1,40 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "absent_delete_rr_rcode",
+  "Notes": "Satisfy a prerequisite proving miss.campus.edu. is in use, then attempt delete_rr for an RRtype/owner pair that is not present (A at miss.campus.edu.) while another RR at the name remains. The observable oracle is the UPDATE reply code; the post-state should remain unchanged.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Prerequisite matches the existing helper RRset, then request deletion of an absent RR at the same owner name.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "miss.campus.edu.",
+          "Type": "TXT"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rr",
+          "Rr": "miss.campus.edu. 500 IN A 198.51.100.10"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "miss.campus.edu.",
+      "Type": "ANY",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe that the zone contents at miss.campus.edu. are unchanged regardless of UPDATE reply code."
+    }
+  ]
+}

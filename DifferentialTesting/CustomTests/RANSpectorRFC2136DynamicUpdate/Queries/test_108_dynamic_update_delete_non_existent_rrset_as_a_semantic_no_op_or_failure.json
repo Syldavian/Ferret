@@ -1,0 +1,41 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_nonexistent_rrset_rcode",
+  "Notes": "Owner name exists via helper A RR, but TXT rrset is absent. The UPDATE deletes the missing TXT rrset after a prerequisite asserting its absence.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to delete a non-existent TXT rrset at an existing owner name after asserting the rrset is absent.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_absent",
+          "Name": "missingset.campus.edu.",
+          "Type": "TXT"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "missingset.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "missingset.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe that the TXT rrset remains absent after the UPDATE, regardless of the UPDATE RCODE."
+    }
+  ]
+}

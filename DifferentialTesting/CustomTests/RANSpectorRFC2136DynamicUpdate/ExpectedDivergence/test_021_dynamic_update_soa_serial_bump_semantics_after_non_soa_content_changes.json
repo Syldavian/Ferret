@@ -1,0 +1,43 @@
+{
+  "scenario_title": "SOA serial bump semantics after non-SOA content changes",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "3007",
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "post_state_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Immediately exposes an incremented SOA serial after the UPDATE-induced content change.",
+        "reply_rcode": "NOERROR",
+        "post_state": "SOA serial is bumped from 3 to a newer value in the follow-up QUERY."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "May defer or apply SOA maintenance differently, so the immediate follow-up SOA QUERY can still show the pre-update serial or a different increment pattern.",
+        "reply_rcode": "NOERROR",
+        "post_state": "SOA serial differs from group_1 in the follow-up QUERY."
+      }
+    },
+    "why_divergence": "RFC 3007 §1.1 requires the primary to increment the zone SOA serial when an update occurs or before the next SOA retrieval, but it does not define the increment amount or mandate identical immediate visibility semantics after the UPDATE transaction. RFC 2136 describes the update processing, but the exact serial arithmetic/timing after a non-SOA content change remains underspecified, so a follow-up SOA query can observe different compliant behaviors.",
+    "test_rationale": "The UPDATE deletes an unrelated A RRset, ensuring the zone changes without directly touching the SOA. The subsequent SOA QUERY checks the apex serial immediately after the transaction, which is precisely where implementations may differ in serial bump timing or arithmetic while still remaining compliant with the underspecified requirements.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

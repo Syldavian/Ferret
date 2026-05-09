@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Delete an absent RR versus absent RRset after prerequisites pass",
+  "test_rationale": "This test isolates the underspecified deletion semantics in RFC 2136 by making the UPDATE otherwise valid and authorized under an unsigned, in-zone dynamic update, then requesting deletion of a TXT RRset that is known to be absent. Because the prerequisites only establish that the zone and queried name exist/are absent as needed, the only interesting choice is whether the server returns success for a no-op delete or emits a semantic failure such as NXRRSET. The follow-up query verifies that the targeted RRset remains absent regardless of the reply.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats delete_rrset targeting an absent RRset as a successful no-op after prerequisites pass.",
+        "reply_rcode": "NOERROR",
+        "post_state": "ghost.campus.edu. TXT remains absent."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE as semantically invalid when the targeted RRset is not present.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "ghost.campus.edu. TXT remains absent."
+      }
+    },
+    "why_divergence": "RFC 2136 clearly defines prerequisite failures, but §3.4.2.7/§3.4.2.8 do not explicitly state whether deleting a nonexistent RR or RRset after prerequisites have already succeeded must be a no-op or an error. Servers may therefore differ on the UPDATE reply RCODE while leaving zone state unchanged."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

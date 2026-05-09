@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Conflicting TTLs for same RRset in one UPDATE",
+  "test_rationale": "This test isolates the RFC 2181 TTL-uniformity rule at the moment of UPDATE processing by adding the same owner/type twice with conflicting TTLs in one message. Since RFC 2136 does not specify an RCODE or exact recovery behavior for this semantic inconsistency, implementations may diverge by rejecting the UPDATE or by accepting it and collapsing the result into a valid RRset. A follow-up QUERY on the touched name makes the difference observable in post-state as well as in the UPDATE reply.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE and canonicalizes or otherwise stores a single RRset for g.campus.edu. A, typically exposing one effective post-state RRset in QUERY.",
+        "reply_rcode": "NOERROR",
+        "post_state": "g.campus.edu. exists with A records after the UPDATE; QUERY returns an A RRset rather than NXDOMAIN/NODATA."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE as semantically invalid because the added RRset would contain unequal TTLs.",
+        "reply_rcode": "FORMERR",
+        "post_state": "g.campus.edu. remains absent; QUERY returns NXDOMAIN or no A RRset."
+      }
+    },
+    "why_divergence": "RFC 2181 §5.2 requires all RRs in an RRset to have the same TTL, but RFC 2136 does not define how an UPDATE message that introduces unequal TTLs for the same owner/type must be handled. The server may reject the message with a format/semantic error or accept and normalize/canonicalize the resulting RRset, so reply and post-state behavior are underspecified."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

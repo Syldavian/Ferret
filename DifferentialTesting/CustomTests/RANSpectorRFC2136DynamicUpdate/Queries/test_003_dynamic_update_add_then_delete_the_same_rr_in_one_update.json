@@ -1,0 +1,38 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "update_conflict_same_rr_add_delete",
+  "Notes": "Single UPDATE contains an add_rr followed by delete_rr for the exact same RR. Follow-up QUERY checks whether the RR exists after the server processes the contradictory update.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add then delete the exact same RR for y.campus.edu. within one UPDATE, with no prerequisites.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "y.campus.edu. 500 IN A 192.0.2.20"
+        },
+        {
+          "Kind": "delete_rr",
+          "Rr": "y.campus.edu. 500 IN A 192.0.2.20"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "y.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the contradictory UPDATE left y.campus.edu. present or absent."
+    }
+  ]
+}

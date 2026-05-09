@@ -1,0 +1,49 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_exclusivity_update",
+  "Notes": "Trigger an UPDATE-time attempt to add an A RR at an owner name that already has a CNAME. RFC 2181 forbids coexistence, but RFC 2136 does not prescribe a unique UPDATE error mapping or state transition for this semantic conflict.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to add an A RR at cname.campus.edu., which already owns a CNAME. The prerequisite ensures the owner name is in use so the conflict is specifically CNAME exclusivity, not missing-name handling.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "cname.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "cname.campus.edu. 500 IN A 192.0.2.41"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "cname.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the original CNAME remains after the UPDATE."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "cname.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the added A RR was committed, rejected, or ignored."
+    }
+  ]
+}

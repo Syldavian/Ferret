@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Delete_rr of an absent RR after prerequisites already proved the name exists",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats delete_rr of a non-member RR as a silent no-op after the prerequisite succeeds.",
+        "reply_rcode": "NOERROR",
+        "post_state": "z.campus.edu. A remains 192.0.2.50"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Signals that the targeted RR is absent even though the rrset exists and the prerequisite passed.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "z.campus.edu. A remains 192.0.2.50"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.2 separates prerequisites from update processing, and §3.4.2 defines delete_rr semantics only for matching data, but it does not clearly mandate the RCODE when the RRset exists and the specific RR is absent. RFC 2181 §5.2 also leaves room for differing treatment of RRset member identity. As a result, implementations may diverge on whether the UPDATE succeeds silently or returns NXRRSET for the absent RR.",
+    "test_rationale": "The zone starts with a single A RR at z.campus.edu., so the rrset_exists prerequisite is satisfied. The UPDATE then targets a different A record at the same owner name, which is not present. This isolates the underspecified case: whether delete_rr of a missing member is accepted as a no-op or rejected with NXRRSET, while the follow-up QUERY confirms the original RRset remains intact.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

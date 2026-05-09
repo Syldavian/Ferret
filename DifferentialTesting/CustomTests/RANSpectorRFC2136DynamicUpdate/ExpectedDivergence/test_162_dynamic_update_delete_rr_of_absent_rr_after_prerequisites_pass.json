@@ -1,0 +1,40 @@
+{
+  "scenario_title": "delete_rr of absent RR after prerequisites pass",
+  "test_rationale": "The zone contains an unrelated TXT RRset so the prerequisite rrset_exists passes, but the UPDATE deletes a specific TXT RR at a different name that is not present at all. This isolates the underspecified case: whether a server treats delete_rr of an absent exact RR as a successful no-op or as an error that aborts the UPDATE. The follow-up queries confirm the targeted name stays absent and help distinguish acceptance from rejection/rollback behavior.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE as a no-op for the absent exact RR, leaving the zone unchanged.",
+        "reply_rcode": "NOERROR",
+        "post_state": "rr.campus.edu. TXT remains absent; ok.campus.edu. TXT still present."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE when delete_rr targets a non-existent exact RR despite the prerequisite passing, and does not apply changes.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "rr.campus.edu. TXT remains absent; ok.campus.edu. TXT still present."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.3 defines delete_rr syntax and semantics for removing an exact RR, while §3.4.1 governs prerequisites, but the RFC does not clearly specify whether attempting to delete an exact RR that is already absent must succeed as a no-op or fail with an error once prerequisites are satisfied. This leaves room for server-policy divergence in both UPDATE RCODE and handling of the post-state."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

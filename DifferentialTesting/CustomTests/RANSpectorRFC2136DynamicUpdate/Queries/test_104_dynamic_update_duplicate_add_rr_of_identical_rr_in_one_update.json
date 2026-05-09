@@ -1,0 +1,37 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "duplicate_add_rr_identity",
+  "Notes": "Single UPDATE contains two identical add_rr operations for the same owner/type/class/TTL/rdata. The test checks whether the server treats the duplicate as harmless de-duplication, as an error, or in a way that affects the stored RRset.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add the same A RR for dup.campus.edu. twice in one UPDATE, with no prerequisites.",
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "dup.campus.edu. 500 IN A 192.0.2.20"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "dup.campus.edu. 500 IN A 192.0.2.20"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "dup.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RRset exists and, if so, whether it is present exactly once after the UPDATE."
+    }
+  ]
+}

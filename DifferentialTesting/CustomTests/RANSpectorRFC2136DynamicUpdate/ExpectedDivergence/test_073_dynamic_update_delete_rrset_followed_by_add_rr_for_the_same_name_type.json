@@ -1,0 +1,41 @@
+{
+  "scenario_title": "delete_rrset followed by add_rr for the same name/type",
+  "test_rationale": "This test uses one UPDATE containing a delete_rrset followed immediately by an add_rr for the same owner/type. That shape directly exercises the RFC 2136 underspecification about intra-message evaluation order: a server may apply the delete first and then accept the new RR, yielding a final A RRset with the replacement address, or it may evaluate the add against the original RRset state or reduce the message to a net-effect conflict, producing a different reply and/or no observable post-state change. The follow-up QUERY makes the final zone state observable as a binary oracle.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Applies the delete_rrset then the add_rr incrementally, resulting in a final A RRset containing 192.0.2.20 and a successful update reply.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host1.campus.edu. A = 192.0.2.20"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the same-message delete_rrset plus add_rr as non-composable or evaluates the add against the original state, resulting in a different reply and/or no final A RRset.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "host1.campus.edu. A absent or unchanged"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2.4 defines delete-rrset semantics, but RFC 2136 does not specify whether multiple prerequisite/operation records in a single UPDATE are processed incrementally against a working image or validated against the original zone state before any changes take effect. RFC 2181 §5.2 addresses RRset consistency/TTL, not intra-message ordering of delete-then-add for the same owner/type, so implementations may differ on whether the add sees the post-delete state or is rejected/collapsed."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

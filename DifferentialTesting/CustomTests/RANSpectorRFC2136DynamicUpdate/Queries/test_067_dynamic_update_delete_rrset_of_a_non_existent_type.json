@@ -1,0 +1,35 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_nonexistent_rrset",
+  "Notes": "Single UPDATE deletes an absent RRset at an existing owner name with no prerequisites; follow-up QUERY checks whether the server treated it as a no-op or rejected/partially applied the change.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete a nonexistent TXT RRset at an existing name with no prerequisites.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "helper.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "helper.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the absent TXT RRset remains absent after the UPDATE."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add CNAME at an owner that already has other data",
+  "test_rationale": "The zone starts with a concrete conflict: host2.campus.edu. already has an A RRset. The single UPDATE tries to add a CNAME at that same owner, which is syntactically valid but semantically contentious under RFC 2181. Querying both CNAME and A after the update makes the divergence observable by reply code and post-state, allowing BIND and Knot to differ in a binary way.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE with NOERROR and transitions the owner set to a CNAME-only state, removing or no longer serving the existing A RRset.",
+        "reply_rcode": "NOERROR",
+        "post_state": "host2.campus.edu. answers with a CNAME rrset and no A rrset."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE because the owner already has non-CNAME data, preserving the original A RRset.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "host2.campus.edu. continues to answer with the original A rrset and no CNAME rrset."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 defines how to encode an UPDATE but does not specify a required semantic outcome when add_rr requests a CNAME at an owner that already has other data. RFC 2181 §10.1 states that a CNAME owner must not have other data, but it does not define the update-time state transition or reply code for this conflict. As a result, servers may differ on whether they reject the UPDATE, accept it and rewrite state, or leave the preexisting data unchanged."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Add then delete the same RR within one UPDATE",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Processes the operations sequentially or otherwise accepts the contradictory update, returning success and leaving no A RR at x.campus.edu. after the delete applies.",
+        "reply_rcode": "NOERROR",
+        "post_state": "x.campus.edu. has no A RRset"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects or normalizes the contradictory same-RR add/delete sequence differently, resulting in a different reply code and/or leaving the A RR present.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "x.campus.edu. retains A 192.0.2.10"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2 describes UPDATE processing as a sequence of changes, and §3.4.2.6 / §3.4.2.8 define add_rr and delete_rr separately, but the RFC does not say what a server must do when the exact same RR is both added and deleted in one atomic UPDATE. This leaves room for sequential application, normalization, or rejection, producing different reply codes and/or final zone contents.",
+    "test_rationale": "This scenario makes the ambiguity concrete by starting with x.campus.edu. A 192.0.2.10 already present and then sending one UPDATE that adds that identical RR and deletes it again. A strictly sequential implementation can succeed and end with no RR; another implementation may treat the combination as contradictory and fail, or preserve the RR through normalization. A follow-up QUERY on the touched name provides the post-state oracle, while the UPDATE reply itself can also diverge.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}

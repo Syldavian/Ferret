@@ -1,0 +1,40 @@
+{
+  "scenario_title": "RRset-equals prereq with duplicate ordering normalization",
+  "test_rationale": "The update is intentionally minimal: it establishes a single exact-match prerequisite on helper.campus.edu. A that is semantically redundant because the same RR is listed twice. If the server canonicalizes duplicate prerequisite members, the prerequisite matches and the harmless add of marker.campus.edu. succeeds; if the server treats duplicate members as malformed or non-identical, the UPDATE is rejected. The follow-up QUERY on marker.campus.edu. provides a stable post-state witness so the test can distinguish acceptance from rejection cleanly.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Canonicalizes duplicate rrset_equals members as redundant input, evaluates the prerequisite as exact set equality, and applies the update.",
+        "reply_rcode": "NOERROR",
+        "post_state": "marker.campus.edu. exists with A 192.0.2.10"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Treats the duplicated prerequisite RRs as malformed or non-canonical input for the exact-match prerequisite and rejects the UPDATE.",
+        "reply_rcode": "FORMERR",
+        "post_state": "marker.campus.edu. does not exist"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.2.3 and §3.2.5 require building an RRset for each unique <NAME,TYPE> and comparing it for equality, but they do not say whether duplicated identical prerequisite RRs are harmless redundancy or invalid prerequisite syntax. That leaves room for one server to canonicalize and accept the prerequisite, while another rejects it with FORMERR or a similar error before comparison."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

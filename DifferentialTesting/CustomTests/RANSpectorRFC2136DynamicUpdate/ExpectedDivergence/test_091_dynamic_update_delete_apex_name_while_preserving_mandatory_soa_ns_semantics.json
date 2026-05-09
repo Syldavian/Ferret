@@ -1,0 +1,42 @@
+{
+  "scenario_title": "Delete apex name while preserving mandatory SOA/NS semantics",
+  "test_rationale": "This test isolates the underspecified case of delete_name applied to the zone apex itself. The prerequisite checks ensure the apex initially contains the expected SOA and NS rrsets, then a single UDP UPDATE attempts to delete the apex owner. Because RFC 2136 does not define the required outcome for removing mandatory apex data, implementations may diverge in whether they refuse the update or accept it while preserving or altering the apex state. Follow-up SOA and NS queries make any post-update difference observable.",
+  "involved_rfcs": [
+    "2136",
+    "1035",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Reject the apex delete_name update because removing the zone apex would violate zone integrity or internal constraints.",
+        "reply_rcode": "REFUSED",
+        "post_state": "Apex SOA/NS remain unchanged; queries continue to return the original rrsets."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accept the update but preserve or reconstruct mandatory apex data, or otherwise process the apex deletion differently.",
+        "reply_rcode": "NOERROR",
+        "post_state": "Apex SOA/NS may remain present, or the server may respond differently on follow-up queries if it enters an invalid or transitional state."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2.5 defines delete_name syntax, but it does not specify what an UPDATE processor must do when the target is the zone apex whose SOA and NS are mandatory for zone validity under RFC 1035 §5.2 and RFC 2181 §5.2. Thus a server may refuse the update, accept it and preserve apex data, or otherwise handle it internally without an explicit protocol violation, yielding observable differences in reply code and/or subsequent apex queries."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

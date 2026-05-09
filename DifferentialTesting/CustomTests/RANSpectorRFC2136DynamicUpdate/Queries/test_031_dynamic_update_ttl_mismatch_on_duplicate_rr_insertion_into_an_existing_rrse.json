@@ -1,0 +1,34 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "ttl_mismatch_duplicate_rr",
+  "Notes": "Seed an A RRset with one TTL, then re-add the identical owner/type/rdata with a different TTL to test how the UPDATE processor reconciles conflicting TTLs in an existing RRset.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add an already-present A RR with a different TTL and no prerequisites.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "ttltest.campus.edu. 60 IN A 192.0.2.60"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "ttltest.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the RRset after the duplicate add with conflicting TTL."
+    }
+  ]
+}

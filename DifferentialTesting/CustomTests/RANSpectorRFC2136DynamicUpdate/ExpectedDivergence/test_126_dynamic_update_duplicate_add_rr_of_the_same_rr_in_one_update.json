@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Duplicate add_rr of the same RR in one UPDATE",
+  "test_rationale": "This test targets the underspecified case where a single DNS UPDATE contains two identical add_rr operations for the same owner, type, class, TTL, and RDATA. The zone is pre-seeded with the target RR so the server must decide whether the duplicated additions are silently coalesced, treated as an idempotent no-op, or rejected as an error. That decision is externally visible both in the UPDATE reply code and in the post-update RRset observed by QUERY, making it suitable for a binary oracle between BIND and Knot.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Accepts the UPDATE by suppressing the duplicate add or treating it as idempotent; the queried RRset remains present as a single A RR.",
+        "reply_rcode": "NOERROR",
+        "post_state": "dup.campus.edu. has exactly one A RR with 198.51.100.7"
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects the UPDATE when it detects the duplicate identical add_rr in the same message, surfacing an error such as YXRRSET-like failure semantics or equivalent update rejection.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "dup.campus.edu. remains unchanged with one A RR with 198.51.100.7"
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.3 defines add semantics but does not specify whether duplicate identical add_rr operations within a single UPDATE must be deduplicated, treated as a no-op, or rejected. RFC 2181 §5.2 says identical RRs are meaningless and should be suppressed, but it does not define UPDATE error handling for intra-message duplicates, leaving servers free to choose different reply codes and/or acceptance behavior."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

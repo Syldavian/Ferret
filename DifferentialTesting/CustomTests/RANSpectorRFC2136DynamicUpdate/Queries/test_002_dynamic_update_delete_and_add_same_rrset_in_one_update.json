@@ -1,0 +1,39 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "intra_message_rrset_conflict",
+  "Notes": "Single UPDATE adds an RR to b.example.campus.edu. and then deletes the same RRset in the same message, with no prerequisites. The follow-up QUERY checks whether the RRset exists after the transaction and records the UPDATE reply behavior.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add then delete the same RRset within one UPDATE message.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "b.example.campus.edu. 500 IN A 192.0.2.2"
+        },
+        {
+          "Kind": "delete_rrset",
+          "Name": "b.example.campus.edu.",
+          "Type": "A"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "b.example.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RRset remains present after the UPDATE transaction."
+    }
+  ]
+}

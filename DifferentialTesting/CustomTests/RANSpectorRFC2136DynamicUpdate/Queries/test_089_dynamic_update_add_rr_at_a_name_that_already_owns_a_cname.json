@@ -1,0 +1,49 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_add_rr_conflict",
+  "Notes": "Add an A RR at an owner that already has a CNAME. Prerequisite name_in_use is satisfied by the existing CNAME owner; the UPDATE then attempts to add incompatible data at the same owner. Follow-up QUERYs check whether the server rejected the UPDATE and preserved the CNAME-only state or accepted/partially applied it.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Prerequisite passes because alias.campus.edu. is already in use. Attempt to add an A RR at the same owner that currently owns a CNAME, which would violate RFC 2181 name-level exclusivity if applied.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "alias.campus.edu."
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "alias.campus.edu. 500 IN A 198.51.100.77"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "alias.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the existing CNAME remains present after the UPDATE."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "alias.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the conflicting A RR was installed or suppressed."
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "cname_add_rr_underspec",
+  "Notes": "Add an A RR to a name that already owns a CNAME, without deleting the CNAME first.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to add an A RR at alias.campus.edu., which already has a CNAME, without removing the CNAME.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "alias.campus.edu."
+        },
+        {
+          "Kind": "rrset_exists",
+          "Name": "alias.campus.edu.",
+          "Type": "CNAME"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "alias.campus.edu. 500 IN A 192.0.2.50"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "alias.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RR was stored despite the preexisting CNAME."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "alias.campus.edu.",
+      "Type": "CNAME",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the CNAME remains, was removed, or coexists with the added A RR."
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "conflicting_add_delete_same_rr",
+  "Notes": "Single UPDATE contains an add_rr followed by delete_rr for the identical RR. The post-update query checks whether the server applied the operations sequentially, collapsed them as a no-op, or rejected the message.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add x.campus.edu. A 192.0.2.10 and then delete the identical RR in the same UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "x.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "x.campus.edu. 500 IN A 192.0.2.10"
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "x.campus.edu. 500 IN A 192.0.2.10"
+        },
+        {
+          "Kind": "delete_rr",
+          "Rr": "x.campus.edu. 500 IN A 192.0.2.10"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "x.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether x.campus.edu. A remains present after the conflicting UPDATE."
+    }
+  ]
+}

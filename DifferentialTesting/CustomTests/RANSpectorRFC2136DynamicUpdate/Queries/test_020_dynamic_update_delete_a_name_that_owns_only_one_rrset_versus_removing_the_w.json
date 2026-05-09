@@ -1,0 +1,44 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "delete_last_rrset_vs_name_existence",
+  "Notes": "Delete the only RRset at a non-apex owner with delete_rrset, then observe whether the owner remains name_in_use or becomes name_absent for follow-up prerequisite interpretation and queries.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the only RRset at leaf.campus.edu. using delete_rrset.",
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "leaf.campus.edu.",
+          "Type": "TXT"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "leaf.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the leaf owner still exists as an empty name or has become nonexistent after deleting its last RRset."
+    },
+    {
+      "Id": "q2",
+      "Kind": "QUERY",
+      "Name": "leaf.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Read the post-state at the same owner using a different type to distinguish NXDOMAIN from a surviving empty node returning NXRRSET."
+    }
+  ]
+}

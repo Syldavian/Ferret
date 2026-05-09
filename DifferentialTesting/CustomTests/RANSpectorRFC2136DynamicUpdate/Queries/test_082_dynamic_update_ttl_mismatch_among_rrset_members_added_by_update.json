@@ -1,0 +1,47 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "ttl_mismatch_rrset_add",
+  "Notes": "Single UPDATE adds two A RRs for the same owner with differing TTLs to probe whether the server normalizes, rejects, or accepts the RRset.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Attempt to add two A RRset members for host5.campus.edu. with different TTLs in one UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "host5.campus.edu.",
+          "Type": "A",
+          "Rrs": [
+            "host5.campus.edu. 300 IN A 192.0.2.90"
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "host5.campus.edu. 30 IN A 192.0.2.91"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "host5.campus.edu. 300 IN A 192.0.2.92"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "host5.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the resulting A RRset and authoritative response after the UPDATE."
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "update_ordering_conflict",
+  "Notes": "Single UPDATE contains an add_rr for an A RRset and a delete_rrset for the same owner/type; the server's intra-message handling order or conflict resolution is intentionally underspecified.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Add flip.campus.edu. A and then delete the same RRset in one UPDATE, with no prerequisites.",
+      "Prerequisites": [],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "flip.campus.edu. 300 IN A 192.0.2.20"
+        },
+        {
+          "Kind": "delete_rrset",
+          "Name": "flip.campus.edu.",
+          "Type": "A"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "flip.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the RRset remains, disappears, or the UPDATE was rejected."
+    }
+  ]
+}

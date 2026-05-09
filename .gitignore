@@ -25,6 +25,7 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+DifferentialTesting/Runs/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -349,3 +350,20 @@ MigrationBackup/
 Results/
 DifferentialTesting/ferret_tests/
 DifferentialTesting/CustomTests/
+!DifferentialTesting/CustomTests/
+DifferentialTesting/CustomTests/*
+!DifferentialTesting/CustomTests/RANSpectorRFC2136DynamicUpdate/
+!DifferentialTesting/CustomTests/RANSpectorRFC2136DynamicUpdate/README.md
+!DifferentialTesting/CustomTests/RANSpectorRFC2136DynamicUpdate/Queries/
+!DifferentialTesting/CustomTests/RANSpectorRFC2136DynamicUpdate/Queries/**
+!DifferentialTesting/CustomTests/RANSpectorRFC2136DynamicUpdate/ZoneFiles/
+!DifferentialTesting/CustomTests/RANSpectorRFC2136DynamicUpdate/ZoneFiles/**
+!DifferentialTesting/CustomTests/RANSpectorRFC2136DynamicUpdate/ExpectedDivergence/
+!DifferentialTesting/CustomTests/RANSpectorRFC2136DynamicUpdate/ExpectedDivergence/**
+!DifferentialTesting/CustomTests/RANSpectorRFC2136DynamicUpdate/ExpectedResults/
+!DifferentialTesting/CustomTests/RANSpectorRFC2136DynamicUpdate/ExpectedResults/**
+DifferentialTesting/CustomTests/RANSpectorRFC2136DynamicUpdate/Differences/
+DifferentialTesting/CustomTests/RANSpectorRFC2136DynamicUpdate/Transcripts/
+DifferentialTesting/CustomTests/RANSpectorRFC2136DynamicUpdate/LoadFailures/
+DifferentialTesting/CustomTests/RANSpectorRFC2136DynamicUpdate/1_log.txt
+DifferentialTesting/CustomTests/RANSpectorRFC2136DynamicUpdate/Fingerprints.json

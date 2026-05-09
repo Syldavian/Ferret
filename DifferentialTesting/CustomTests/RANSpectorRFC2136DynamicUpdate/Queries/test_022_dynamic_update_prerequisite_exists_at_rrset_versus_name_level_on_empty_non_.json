@@ -1,0 +1,44 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "empty_nonterminal_prereq_mismatch",
+  "Notes": "Set up mid.campus.edu. as an empty non-terminal via a descendant RR only. The UPDATE uses a name-level prerequisite on the empty non-terminal and then creates a TXT RRset there, exposing whether the server treats the empty non-terminal as name_in_use or name_absent / NXRRSET-relevant.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Require mid.campus.edu. to be in use, and require its TXT RRset to be absent, then add the TXT RR there.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "mid.campus.edu."
+        },
+        {
+          "Kind": "rrset_absent",
+          "Name": "mid.campus.edu.",
+          "Type": "TXT"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "add_rr",
+          "Rr": "mid.campus.edu. 500 IN TXT \"x\""
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "mid.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the TXT RRset was created after the UPDATE."
+    }
+  ]
+}

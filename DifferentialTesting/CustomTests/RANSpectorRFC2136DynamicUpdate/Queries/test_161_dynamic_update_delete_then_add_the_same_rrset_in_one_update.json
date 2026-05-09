@@ -1,0 +1,48 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "update_conflicting_delete_add_same_rrset",
+  "Notes": "Single UPDATE deletes the TXT RRset at hold.campus.edu. and then adds a new TXT RR at the same owner/type. The follow-up QUERY observes whether the server applied the operations sequentially, rejected the conflict, or otherwise normalized the message.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the existing TXT RRset at hold.campus.edu. and then add a new TXT RR at the same owner/type in the same UPDATE.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_equals",
+          "Name": "hold.campus.edu.",
+          "Type": "TXT",
+          "Rrs": [
+            "hold.campus.edu. 500 IN TXT \"old\""
+          ]
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "hold.campus.edu.",
+          "Type": "TXT"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "hold.campus.edu. 300 IN TXT \"new\""
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "hold.campus.edu.",
+      "Type": "TXT",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe the post-state of the TXT RRset after the conflicting UPDATE."
+    }
+  ]
+}

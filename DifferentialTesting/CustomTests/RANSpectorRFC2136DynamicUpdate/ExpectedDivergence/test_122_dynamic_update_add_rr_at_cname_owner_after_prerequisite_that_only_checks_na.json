@@ -1,0 +1,41 @@
+{
+  "scenario_title": "Add RR at CNAME owner after prerequisite that only checks name use",
+  "test_rationale": "This test first satisfies the prerequisite with name_in_use, which can pass even when the owner name is a CNAME, then performs a single add_rr for an A record at that same owner. The ambiguity is whether the server must reject the update as a CNAME exclusivity violation, silently replace the CNAME, or accept conflicting data. By querying both the A and CNAME forms of the touched owner afterward, the scenario can distinguish a rejection that preserves the pure CNAME state from an implementation that accepts or normalizes the update differently.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Rejects the UPDATE as a CNAME exclusivity conflict, commonly with YXRRSET or a server policy error such as SERVFAIL, and leaves the CNAME-only state intact.",
+        "reply_rcode": "YXRRSET",
+        "post_state": "q1 returns empty/no A rrset; q2 returns the original CNAME rrset only."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Accepts or otherwise handles the add_rr differently when the prerequisite only proved name existence, resulting in a different reply and/or a post-state that exposes the added A rrset or a normalized replacement.",
+        "reply_rcode": "NOERROR",
+        "post_state": "q1 returns an A rrset at k.campus.edu., or q2 no longer shows a pure CNAME-only state."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.1 allows prerequisites to assert only name existence, but it does not specify the semantic handling of an add_rr that introduces non-CNAME data at a name already known to be a CNAME. RFC 2181 §10.1 states the exclusivity invariant for aliases, yet it does not define the UPDATE processor's required RCODE or exact state transition for this mismatch, so implementations may reject, accept, or normalize the change differently."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

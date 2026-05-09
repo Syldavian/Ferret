@@ -1,0 +1,41 @@
+{
+  "scenario_title": "SOA serial change on dynamic update is unspecified",
+  "test_rationale": "This test performs one ordinary RFC 2136 UPDATE that adds a new in-zone A record and then queries the zone apex SOA. The UPDATE does not touch the SOA directly, so any serial change is an implementation policy choice rather than a protocol requirement. Because BIND and Knot can differ on whether they auto-increment the SOA serial after a successful update, the post-update SOA query provides a compact observable oracle for the underspecified behavior.",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "post_state_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Automatically increments the SOA serial after the successful UPDATE.",
+        "reply_rcode": "NOERROR",
+        "post_state": "apex SOA serial changes from 3 to a higher value (typically 4, but implementation policy may vary)."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Leaves the SOA serial unchanged unless the SOA itself is explicitly modified by the UPDATE.",
+        "reply_rcode": "NOERROR",
+        "post_state": "apex SOA serial remains 3."
+      }
+    },
+    "why_divergence": "RFC 2136 specifies how UPDATEs modify zone data but does not define any mandatory SOA-serial bump policy, arithmetic, or timing for successful updates that do not explicitly edit the SOA. As a result, authoritative servers may legally differ on whether the apex SOA serial changes after an ordinary update."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "absent_rrset_delete_after_prereq",
+  "Notes": "Prerequisite proves the name is in use while the target MX rrset is absent; the update then attempts to delete the already-absent MX rrset at the same name.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Require absenttype.campus.edu. to be in use via its A rrset, then delete the absent MX rrset at that name.",
+      "Prerequisites": [
+        {
+          "Kind": "name_in_use",
+          "Name": "absenttype.campus.edu."
+        },
+        {
+          "Kind": "rrset_absent",
+          "Name": "absenttype.campus.edu.",
+          "Type": "MX"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "absenttype.campus.edu.",
+          "Type": "MX"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "absenttype.campus.edu.",
+      "Type": "MX",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the absent MX rrset remains absent after the update, regardless of the UPDATE reply."
+    }
+  ]
+}

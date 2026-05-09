@@ -1,0 +1,42 @@
+{
+  "scenario_title": "Apex NS/SOA delete_name versus REFUSED/NOERROR choice",
+  "test_rationale": "This test isolates the underspecified edge case where an UPDATE delete_name targets the zone apex itself. The operation is syntactically valid, but it collides with mandatory apex content. By querying SOA and NS afterward, the scenario verifies that the zone remains coherent while the UPDATE reply reveals implementation-specific policy. This makes the divergence visible even if both servers preserve the records, because the reply code itself is part of the oracle.",
+  "involved_rfcs": [
+    "2136",
+    "2181",
+    "3007"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Refuse or otherwise reject the apex delete_name request while preserving the mandatory apex SOA/NS RRsets.",
+        "reply_rcode": "REFUSED",
+        "post_state": "campus.edu. still has SOA and NS RRsets unchanged."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Reject with a different semantic failure code for the invalid apex deletion attempt, while still preserving the mandatory apex SOA/NS RRsets.",
+        "reply_rcode": "NOTZONE",
+        "post_state": "campus.edu. still has SOA and NS RRsets unchanged."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.4.2.2 defines delete_name syntax, but RFC 2181 §6.1 and RFC 3007 §3.1.1 only require that SOA/NS remain present and discourage their modification; they do not mandate one specific UPDATE RCODE when a delete_name targets the zone apex. Servers therefore can choose different refusal/semantic-failure replies while keeping the zone coherent."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "scenario_title": "Delete_rrset of a non-existent type after name existence is established",
+  "test_rationale": "This test isolates the underspecified corner where an UPDATE first proves a name exists via a prerequisite and then issues delete_rrset for a type that is not present at that name. The zone starts with only an A RRset at n.campus.edu., so TXT is definitely absent. Because the operation is semantically empty, servers differ in whether they return NOERROR as a no-op or NXRRSET as an error, while the ensuing queries confirm that the zone content itself remains unchanged.",
+  "involved_rfcs": [
+    "2136"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_only",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Treats delete_rrset for a non-existent RRset as a harmless no-op once the name prerequisite is satisfied.",
+        "reply_rcode": "NOERROR",
+        "post_state": "No change; n.campus.edu. retains only its A RRset and remains TXT-absent."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Signals an error for the semantically empty delete_rrset operation against an absent RRset.",
+        "reply_rcode": "NXRRSET",
+        "post_state": "No change; n.campus.edu. retains only its A RRset and remains TXT-absent."
+      }
+    },
+    "why_divergence": "RFC 2136 §3.2 and §3.4.2 define prerequisites and delete_rrset semantics, but do not mandate a single outcome when the name is already established by prerequisite and the targeted RRset is absent. Implementations may therefore either accept the update as a no-op or reject it with NXRRSET, yielding a reply-code divergence without a post-state difference."
+  },
+  "ferret_compatibility": {
+    "mode": "DynamicUpdate",
+    "auth": "none",
+    "transport": "udp",
+    "implementations": [
+      "bind",
+      "knot"
+    ],
+    "requires_features": [],
+    "excluded_implementations": []
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "Mode": "DynamicUpdate",
+  "Origin": "campus.edu.",
+  "Auth": {
+    "Mode": "none"
+  },
+  "Category": "update_ordering_conflict",
+  "Notes": "Single UPDATE deletes an RRset and then adds an RR at the same owner name/type, which exposes whether the server applies UPDATE operations strictly sequentially or treats same-message delete/add conflicts differently.",
+  "Steps": [
+    {
+      "Id": "u1",
+      "Kind": "UPDATE",
+      "Transport": "udp",
+      "Description": "Delete the existing A RRset at flip.campus.edu. and then add a new A RR at the same name in the same UPDATE message.",
+      "Prerequisites": [
+        {
+          "Kind": "rrset_exists",
+          "Name": "flip.campus.edu.",
+          "Type": "A"
+        }
+      ],
+      "Operations": [
+        {
+          "Kind": "delete_rrset",
+          "Name": "flip.campus.edu.",
+          "Type": "A"
+        },
+        {
+          "Kind": "add_rr",
+          "Rr": "flip.campus.edu. 500 IN A 192.0.2.40"
+        }
+      ]
+    },
+    {
+      "Id": "q1",
+      "Kind": "QUERY",
+      "Name": "flip.campus.edu.",
+      "Type": "A",
+      "Transport": "udp",
+      "Normalize": "rrset",
+      "IgnoreTTL": true,
+      "Description": "Observe whether the A RRset exists after the UPDATE."
+    }
+  ]
+}

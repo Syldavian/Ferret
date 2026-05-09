@@ -1,0 +1,43 @@
+{
+  "scenario_title": "Add RR then delete same RR in one UPDATE",
+  "test_rationale": "",
+  "involved_rfcs": [
+    "2136",
+    "2181"
+  ],
+  "expected_divergence": {
+    "divergence_type": "reply_and_post_state",
+    "likely_outcomes": {
+      "group_1": {
+        "implementations": [
+          "bind"
+        ],
+        "behavior": "Applies the UPDATE sequentially or normalizes the net effect, returning NOERROR and leaving the A RRset absent or unchanged depending on local handling.",
+        "reply_rcode": "NOERROR",
+        "post_state": "y.campus.edu. has no A RRset after the UPDATE."
+      },
+      "group_2": {
+        "implementations": [
+          "knot"
+        ],
+        "behavior": "Rejects or otherwise handles the add-then-delete-of-identical-RR sequence differently, potentially returning SERVFAIL while still leaving no persistent A RRset.",
+        "reply_rcode": "SERVFAIL",
+        "post_state": "y.campus.edu. has no A RRset after the UPDATE."
+      }
+    },
+    "why_divergence": "RFC 2136 §3 and §3.4.1–§3.4.2 define how add_rr and delete_rr are encoded and processed, but do not specify whether a server must apply operations strictly in order, coalesce opposite operations within the same UPDATE, or reject the message when the same RR is both added and deleted in one transaction. That leaves room for divergent reply codes and potentially divergent handling of the resulting zone state.",
+    "test_rationale": "This test uses one minimal UPDATE that first adds a specific A RR and then deletes the exact same RR for the same owner name. Because RFC 2136 does not constrain whether intra-message opposite operations are processed sequentially, collapsed, or validated as a set, servers may differ in whether they accept the UPDATE and what final state they preserve. The follow-up QUERY on the touched name makes the outcome observable as either a successful no-op-like acceptance or an error/alternative handling path.",
+    "ferret_compatibility": {
+      "mode": "DynamicUpdate",
+      "auth": "none",
+      "transport": "udp",
+      "implementations": [
+        "bind",
+        "knot"
+      ],
+      "requires_features": [],
+      "excluded_implementations": []
+    }
+  },
+  "ferret_compatibility": {}
+}
